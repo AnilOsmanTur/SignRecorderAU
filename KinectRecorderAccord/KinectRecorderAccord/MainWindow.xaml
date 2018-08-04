@@ -1,0 +1,49 @@
+﻿<Window x:Class="KinectRecorderAccord.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Closing="MainWindow_Closing" WindowState="Maximized" Height="766.209" Width="1189.552">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*"/>
+            <ColumnDefinition Width="50*"/>
+            <ColumnDefinition Width="41*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="290" />
+            <RowDefinition Height="9*"/>
+            <RowDefinition Height="288"/>
+            <RowDefinition Height="5*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="95" Margin="157,0,160,0"><Run Text="Color"/></TextBlock>
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="95" Margin="152,0,165,0" Grid.Column="1"><Run Text="Depth"/></TextBlock>
+        <TextBlock Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="95" Margin="139,0,178,5"><Run Text="Body index"/></TextBlock>
+        <TextBlock Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="119" Margin="152,0,141,5" Grid.Column="1"><Run Text="Skeletal Data"/></TextBlock>
+
+        <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10" Grid.Row="1" Grid.Column="0" >
+            <Image x:Name="color_source" Source="{Binding ImageSourceColor}" Stretch="UniformToFill" />
+        </Viewbox>
+        <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10" Grid.Row="1" Grid.Column="1" >
+            <Image x:Name="color_source1" Source="{Binding ImageSourceDepth}" Stretch="UniformToFill" />
+        </Viewbox>
+        <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10" Grid.Row="3" Grid.Column="0" >
+            <Image x:Name="color_source2" Source="{Binding ImageSourceBodyIndex}" Stretch="UniformToFill" />
+        </Viewbox>
+        <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10" Grid.Row="3" Grid.Column="1" >
+            <Image x:Name="color_source3" Source="{Binding ImageSourceSkeletal}" Stretch="UniformToFill" />
+        </Viewbox>
+
+        <Label x:Name="colorResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="200" FontSize="10"/>
+        <Label x:Name="indexResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,3,0,0" Grid.Row="4" VerticalAlignment="Top" Width="200" FontSize="10"/>
+        <Label x:Name="depthResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="200" FontSize="10" Grid.Column="1"/>
+        <Label x:Name="skeletalResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,3,0,0" Grid.Row="4" VerticalAlignment="Top" Width="200" FontSize="10" Grid.Column="1"/>
+        <Label x:Name="colorFpsText" Content="fps: " Height="21" Margin="0,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="86" FontSize="10" HorizontalAlignment="Right"/>
+
+        <Button Grid.Row="3" Content="Screenshot" Height="32" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,225,10,31" Click="ScreenshotButton_Click" Grid.Column="2" Width="114" />
+
+        <TextBlock x:Name="StatusTextBlock"  Grid.Column="2" HorizontalAlignment="Left" Margin="51,137,0,0" Grid.Row="3" TextWrapping="Wrap" Text="Status" VerticalAlignment="Top" Height="55" Width="244"/>
+        <Button x:Name="recordBtn" Content="Start Recording" IsEnabled="False" Click="recordBtn_Click" Grid.Column="2" HorizontalAlignment="Left" Margin="209,70,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" Height="27"/>
+        <TextBlock x:Name="RecordingTextBlock" Grid.Column="2" HorizontalAlignment="Left" Margin="51,21,0,0" Grid.Row="3" TextWrapping="Wrap" Text="not Recording" VerticalAlignment="Top" Height="44" Width="244"/>
+    </Grid>
+</Window>
