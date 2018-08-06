@@ -36,7 +36,7 @@
 
         <Label x:Name="colorResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="200" FontSize="10"/>
         <Label x:Name="indexResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,3,0,0" Grid.Row="4" VerticalAlignment="Top" Width="200" FontSize="10"/>
-        <Label x:Name="depthResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="200" FontSize="10" Grid.Column="1"/>
+        <Label x:Name="depthResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10.2,7.6,0,0" Grid.Row="2" VerticalAlignment="Top" Width="392" FontSize="10" Grid.Column="1"/>
         <Label x:Name="skeletalResolutionText" Content="Resolution: " HorizontalAlignment="Left" Height="21" Margin="10,3,0,0" Grid.Row="4" VerticalAlignment="Top" Width="200" FontSize="10" Grid.Column="1"/>
         <Label x:Name="colorFpsText" Content="fps: " Height="21" Margin="0,8,0,0" Grid.Row="2" VerticalAlignment="Top" Width="86" FontSize="10" HorizontalAlignment="Right"/>
 

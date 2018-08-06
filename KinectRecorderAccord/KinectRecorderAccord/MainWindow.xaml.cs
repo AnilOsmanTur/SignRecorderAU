@@ -11,6 +11,10 @@ using System.Globalization;
 using System.IO;
 using System.ComponentModel;
 using Accord.Video.FFMPEG;
+using System.Drawing;
+using System.Threading;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 
 namespace KinectRecorderAccord
@@ -64,17 +68,26 @@ namespace KinectRecorderAccord
         private WriteableBitmap bodyIndexBitmap = null;
         private DrawingImage skeletalImage = null;
 
+        private Bitmap c_bitmap;
+        private Bitmap d_bitmap;
+
         // bitmap var
         private Queue<System.Drawing.Bitmap> colorBitmapBuffer = new Queue<System.Drawing.Bitmap>();
-
+        byte[] colorPixelBuffer;
+        private Queue<System.Drawing.Bitmap> depthBitmapBuffer = new Queue<System.Drawing.Bitmap>();
+        ushort[] depthPixelBuffer;
         // writer class
         private VideoFileWriter colorWriter;
+        private VideoFileWriter depthWriter;
 
         private bool isRecording = false;
         private UInt64 recordedFrameCount = 0;
+        double fps;
+        private readonly object _lock = new object();
 
         public MainWindow()
         {
+
             // kinect init
             this.kinectSensor = KinectSensor.GetDefault();
 
@@ -86,10 +99,12 @@ namespace KinectRecorderAccord
             this.kinectSensor.Open();
 
             // writer init
-            //Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            //colorWriter = new VideoFileWriter();
-            //colorWriter.Open("C:/Users/AnılOsman/Desktop/test.mp4", 1920, 1080, rationalFrameRate, VideoCodec.MPEG4);
- 
+            /*Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
+            colorWriter = new VideoFileWriter();
+            colorWriter.Open("C:/Users/ASUS/Desktop/testColor.avi", 1920, 1080, rationalFrameRate, VideoCodec.MPEG4);
+            depthWriter = new VideoFileWriter();
+            depthWriter.Open("C:/Users/ASUS/Desktop/testDepth.avi", 512, 424, rationalFrameRate, VideoCodec.MPEG4);*/
+
             this.DataContext = this; 
             this.InitializeComponent();
             this.Loaded += new RoutedEventHandler(MainWindow_Loaded);
@@ -100,10 +115,11 @@ namespace KinectRecorderAccord
         // initialize color stream
         public void InitializeColorStream()
         {
+            
             this.colorFrameReader = this.kinectSensor.ColorFrameSource.OpenReader();
             this.colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
             this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-
+            this.colorPixelBuffer = new byte[colorFrameDescription.Width * colorFrameDescription.Height* 4];
         }
 
         public void InitializeDepthStream()
@@ -112,6 +128,7 @@ namespace KinectRecorderAccord
             this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
             this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height];
             this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            this.depthPixelBuffer = new ushort[depthFrameDescription.Width * depthFrameDescription.Height];
         }
 
         public void InitializeSkeletalStream()
@@ -149,7 +166,7 @@ namespace KinectRecorderAccord
             get
             {
                 return this.colorBitmap;
-
+                //return null;
             }
         }
         public ImageSource ImageSourceDepth
@@ -157,6 +174,7 @@ namespace KinectRecorderAccord
             get
             {
                 return this.depthBitmap;
+                //return null;
             }
         }
         public ImageSource ImageSourceSkeletal
@@ -164,6 +182,7 @@ namespace KinectRecorderAccord
             get
             {
                 return this.skeletalImage;
+                //return null;
             }
         }
         public ImageSource ImageSourceBodyIndex
@@ -171,22 +190,84 @@ namespace KinectRecorderAccord
             get
             {
                 return this.bodyIndexBitmap;
+                //return null;
             }
         }
+        public void colorWrite()
+        {
+            while (true)
+            {
+                
+                    Console.WriteLine("color");
+                    if (colorBitmapBuffer.Count > 0)
+                    {
+                        Console.WriteLine("cu");
+                        //Console.WriteLine(colorBitmapBuffer.Count);
+                        Bitmap b = colorBitmapBuffer.Dequeue();
+                        this.colorWriter.WriteVideoFrame(b);
+                    }
 
+
+                    if (!isRecording && colorBitmapBuffer.Count == 0)
+                    {
+                        colorWriter.Close();
+                        Console.WriteLine("writer kapandi");
+                        break;
+                    }
+                
+            }
+        }
+        public void depthWrite()
+        {
+            while (true)
+            {
+               
+                    Console.WriteLine("Depth");
+                    if (depthBitmapBuffer.Count > 0)
+                    {
+                        Console.WriteLine("du");
+                        Console.WriteLine(depthBitmapBuffer.Count);
+                        Bitmap d = depthBitmapBuffer.Dequeue();
+                        this.depthWriter.WriteVideoFrame(d);
+                    }
+                    if (!isRecording && depthBitmapBuffer.Count == 0)
+                    {
+                        depthWriter.Close();
+                        Console.WriteLine("writer kapandi");
+                        break;
+                    }
+                
+            }
+        }
+        int i = 0;
         public void recordBtn_Click(Object sender, RoutedEventArgs e)
         {
+            
             if (isRecording)
             {
+                
                 this.recordBtn.Content = "Start Recording";
                 this.isRecording = false;
                 // start writing file process
                 this.RecordingTextBlock.Text = "Recording Stoped";
+          
             }
             else
             {
-                this.recordBtn.Content = "Stop Recording";
+                Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
+                i++;
+                colorWriter = new VideoFileWriter();
+                colorWriter.Open("C:/Users/ASUS/Desktop/testColor" + i.ToString() + ".avi", 1920, 1080, rationalFrameRate, VideoCodec.MPEG4);
+                depthWriter = new VideoFileWriter();
+                depthWriter.Open("C:/Users/ASUS/Desktop/testDepth"+i.ToString()+".avi", 512, 424, rationalFrameRate, VideoCodec.MPEG4);
 
+                Thread colorWriteThread = new Thread(new ThreadStart(colorWrite));
+                Thread depthWriteThread = new Thread(new ThreadStart(depthWrite));
+                
+                colorWriteThread.Start();
+                depthWriteThread.Start();
+                
+                this.recordBtn.Content = "Stop Recording";
                 this.isRecording = true;
                 // this will fire up the adding data to lists
                 this.RecordingTextBlock.Text = "Recording";
@@ -237,6 +318,7 @@ namespace KinectRecorderAccord
                 this.kinectSensor.Close();
                 this.kinectSensor = null;
             }
+            
         }
 
         private void ScreenshotButton_Click(object sender, RoutedEventArgs e)
@@ -277,17 +359,15 @@ namespace KinectRecorderAccord
                 }
             }
         }
-
         private async void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
         {
-
             // ColorFrame is IDisposable
             using (ColorFrame colorFrame = e.FrameReference.AcquireFrame())
             {
 
                 if (colorFrame != null)
                 {
-                    double fps = 1 / colorFrame.ColorCameraSettings.FrameInterval.TotalSeconds;
+                    this.fps = 1 / colorFrame.ColorCameraSettings.FrameInterval.TotalSeconds;
                     colorFpsText.Content = "FPS :  " + fps.ToString("0.###");
 
                     FrameDescription colorFrameDescription = colorFrame.FrameDescription;
@@ -308,29 +388,36 @@ namespace KinectRecorderAccord
                                 ColorImageFormat.Bgra);
                             colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
                             this.colorBitmap.AddDirtyRect(new Int32Rect(0, 0, this.colorBitmap.PixelWidth, this.colorBitmap.PixelHeight));
-                        }
+                            this.colorBitmap.Unlock();
 
-                        this.colorBitmap.Unlock();
-                        if (isRecording)
-                        {
-                            this.colorBitmapBuffer.Enqueue(BitmapFromWriteableBitmap(this.colorBitmap));
-                            //saveCapture();
-                            this.recordedFrameCount++;
-                            if (fps < 16.0)
+                            colorFrame.CopyConvertedFrameDataToArray(colorPixelBuffer, ColorImageFormat.Bgra);
+
+                            if (isRecording)
                             {
-                                this.colorBitmapBuffer.Enqueue(BitmapFromWriteableBitmap(this.colorBitmap));
+                                this.c_bitmap = ArrayToBitmap(colorPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                                this.colorBitmapBuffer.Enqueue(this.c_bitmap);
+                                System.GC.Collect();
                                 //saveCapture();
                                 this.recordedFrameCount++;
+                                if (fps < 16.0)
+                                {
+                                    Console.WriteLine("fps drop yaşandı");
+                                    this.colorBitmapBuffer.Enqueue(this.c_bitmap);
+                                    //saveCapture();
+                                    this.recordedFrameCount++;
+                                }
                             }
+                       
                         }
+
                         this.RecordingTextBlock.Text = string.Format("Recording: saved frame count: {0}", this.recordedFrameCount);
-                        //this.bitmap = BitmapFromWriteableBitmap(this.colorBitmap);
-                        //this.bitmap.RotateFlip(System.Drawing.RotateFlipType.Rotate180FlipY);
-                        //this.writer.AddFrame(this.bitmap);
+                       
                     }
                 }
             }
         }
+        
+       
         private System.Drawing.Bitmap BitmapFromWriteableBitmap(WriteableBitmap writeBmp)
         {
             System.Drawing.Bitmap bmp;
@@ -352,7 +439,6 @@ namespace KinectRecorderAccord
             {
                 if (depthFrame != null)
                 {
-
                     // the fastest way to process the body index data is to directly access 
                     // the underlying buffer
                     using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
@@ -375,6 +461,25 @@ namespace KinectRecorderAccord
                             skeletalResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
                             this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, minDepth, maxDepth);
                             depthFrameProcessed = true;
+
+                            
+         
+                            if (isRecording)
+                            {
+                                this.d_bitmap = BitmapFromWriteableBitmap(depthBitmap);
+                                
+                                this.depthBitmapBuffer.Enqueue(this.d_bitmap);
+                                System.GC.Collect();
+                                //saveCapture();
+                                this.recordedFrameCount++;
+                                if (this.fps < 16.0)
+                                {
+                                    Console.WriteLine("fps drop yaşandı");
+                                    this.depthBitmapBuffer.Enqueue(this.d_bitmap);
+                                    //saveCapture();
+                                    this.recordedFrameCount++;
+                                }
+                            }
                         }
                     }
                 }
@@ -385,6 +490,9 @@ namespace KinectRecorderAccord
                 this.RenderDepthPixels();
             }
         }
+
+
+        
         private unsafe void ProcessDepthFrameData(IntPtr depthFrameData, uint depthFrameDataSize, ushort minDepth, ushort maxDepth)
         {
             // depth frame data is a 16 bit value
@@ -401,7 +509,20 @@ namespace KinectRecorderAccord
                 this.depthPixels[i] = (byte)(depth >= minDepth && depth <= maxDepth ? (depth / MapDepthToByte) : 0);  // need better mapping ()
             }
         }
+        Bitmap ArrayToBitmap(byte[] array, int width, int height, System.Drawing.Imaging.PixelFormat pixelFormat)
+        {
 
+            Bitmap bitmapFrame = new Bitmap(width, height, pixelFormat);
+
+            BitmapData bitmapData = bitmapFrame.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, bitmapFrame.PixelFormat);
+
+            IntPtr intPointer = bitmapData.Scan0;
+            Marshal.Copy(array, 0, intPointer, array.Length);
+
+            bitmapFrame.UnlockBits(bitmapData);
+            return bitmapFrame;
+
+        }
         /// <summary>
         /// Renders color pixels into the writeableBitmap.
         /// </summary>
@@ -412,6 +533,7 @@ namespace KinectRecorderAccord
                 this.depthPixels,
                 this.depthBitmap.PixelWidth,
                 0);
+            
         }
 
 
