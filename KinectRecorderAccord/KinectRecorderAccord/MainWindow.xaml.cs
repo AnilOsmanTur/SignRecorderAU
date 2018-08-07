@@ -28,11 +28,10 @@ namespace KinectRecorderAccord
 
         private SkeletonHandler skeletonHandler;
 
-        //Depth variables
-        private double MapDepthToByte = 8000 / 256;
-        private byte[] depthPixels = null; // wee have to use byte
+        private DepthHandler depthHandler;
 
         //Bodyindex variables
+
         /// Size of the RGB pixel in the bitmap
         private const int BytesPerPixel = 4;
         /// Collection of colors to be used to display the BodyIndexFrame data.
@@ -59,7 +58,6 @@ namespace KinectRecorderAccord
 
         // FrameDescriptors
         private FrameDescription colorFrameDescription = null;
-        private FrameDescription depthFrameDescription = null;
         private FrameDescription bodyIndexFrameDescription = null;
 
         // writeable bitmaps
@@ -69,33 +67,28 @@ namespace KinectRecorderAccord
         private DrawingImage skeletalImage = null;
 
         private Bitmap cBitmap;
-        private Bitmap dBitmap;
         private Bitmap bBitmap;
 
         // bitmap var
         private Queue<System.Drawing.Bitmap> colorBitmapBuffer = new Queue<System.Drawing.Bitmap>();
         byte[] colorPixelBuffer;
-        private Queue<System.Drawing.Bitmap> depthBitmapBuffer = new Queue<System.Drawing.Bitmap>();
-        byte[] depthPixelBuffer;
         private Queue<System.Drawing.Bitmap> bodyBitmapBuffer = new Queue<System.Drawing.Bitmap>();
         byte[] bodyPixelBuffer;
 
         // writer class
         private VideoFileWriter colorWriter;
-        private VideoFileWriter depthWriter;
         private VideoFileWriter bodyWriter;
 
         private String colorVideoPath;
-        private String depthVideoPath;
         private String SkeletalDataPath;
         private String BodyIndexPath;
 
         private bool isRecording = false;
         private UInt32 recordedColorFrameCount = 0;
-        private UInt32 recordedDepthFrameCount = 0;
         private UInt32 recordedBodyFrameCount = 0;
 
         double fps;
+
         private readonly object _lock = new object();
 
         public MainWindow()
@@ -132,10 +125,11 @@ namespace KinectRecorderAccord
         public void InitializeDepthStream()
         {
             this.depthFrameReader = this.kinectSensor.DepthFrameSource.OpenReader();
-            this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
-            this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height * 4];
-            this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-            this.depthPixelBuffer = new byte[depthFrameDescription.Width * depthFrameDescription.Height * 3];
+
+            depthHandler = new DepthHandler(this.kinectSensor.DepthFrameSource.FrameDescription, _lock);
+
+            this.depthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
+            
         }
 
         public void InitializeSkeletalStream()
@@ -159,7 +153,7 @@ namespace KinectRecorderAccord
             this.bodyIndexPixels = new uint[this.bodyIndexFrameDescription.Width * this.bodyIndexFrameDescription.Height];
             // create the bitmap to display
             this.bodyIndexBitmap = new WriteableBitmap(this.bodyIndexFrameDescription.Width, this.bodyIndexFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-            this.bodyPixelBuffer = new byte[depthFrameDescription.Width * depthFrameDescription.Height];
+            this.bodyPixelBuffer = new byte[depthHandler.Width * depthHandler.Height];
         }
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
@@ -225,27 +219,7 @@ namespace KinectRecorderAccord
             }
         }
 
-        public void depthWrite()
-        {
-            while (true)
-            {
-                lock (_lock)
-                {
-                    Console.WriteLine("Depth");
-                    if (depthBitmapBuffer.Count > 0)
-                    {
-                        //Console.WriteLine(depthBitmapBuffer.Count);
-                        this.depthWriter.WriteVideoFrame(depthBitmapBuffer.Dequeue());
-                    }
-                    else if(!isRecording)
-                    {
-                        depthWriter.Close();
-                        Console.WriteLine("depth writer closed.");
-                        break;
-                    }
-                }
-            }
-        }
+
 
         private void bodyWrite()
         {
@@ -276,6 +250,7 @@ namespace KinectRecorderAccord
                 
                 this.recordBtn.Content = "Start Recording";
                 this.isRecording = false;
+                depthHandler.setRecordingState(false);
                 // start writing file process
                 this.RecordingTextBlock.Text = "Recording Stoped";
 
@@ -283,21 +258,22 @@ namespace KinectRecorderAccord
             }
             else
             {
+                int bitRate = 12000000;
+
                 colorVideoPath = "C:/Users/AnılOsman/Desktop/testColor.avi";
-                depthVideoPath = "C:/Users/AnılOsman/Desktop/testDepth.avi";
+                depthHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testDepth.avi", bitRate);
                 BodyIndexPath = "C:/Users/AnılOsman/Desktop/testBody.avi";
                 // writer init
-                int bitRate = 10000;
+
                 Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
                 colorWriter = new VideoFileWriter();
                 colorWriter.Open(colorVideoPath, 1920, 1080, rationalFrameRate, VideoCodec.MPEG4, bitRate);
-                depthWriter = new VideoFileWriter();
-                depthWriter.Open(depthVideoPath, 512, 424, rationalFrameRate, VideoCodec.MPEG4, bitRate);
+                
                 bodyWriter = new VideoFileWriter();
                 bodyWriter.Open(BodyIndexPath, 512, 424, rationalFrameRate, VideoCodec.MPEG4, bitRate);
 
                 Thread colorWriteThread = new Thread(new ThreadStart(colorWrite));
-                Thread depthWriteThread = new Thread(new ThreadStart(depthWrite));
+                Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
                 Thread bodyWriteThread = new Thread(new ThreadStart(bodyWrite));
 
                 colorWriteThread.Start();
@@ -306,6 +282,7 @@ namespace KinectRecorderAccord
                 
                 this.recordBtn.Content = "Stop Recording";
                 this.isRecording = true;
+                depthHandler.setRecordingState(true);
                 // this will fire up the adding data to lists
                 this.RecordingTextBlock.Text = "Recording";
             }
@@ -450,7 +427,7 @@ namespace KinectRecorderAccord
 
                         this.RecordingTextBlock.Text = string.Format("Recording: saved color frame count: {0}\n depth: {1}\n body: {2}",
                                                                     this.recordedColorFrameCount,
-                                                                    this.recordedDepthFrameCount,
+                                                                    depthHandler.frameCount,
                                                                     this.recordedBodyFrameCount);
                        
                     }
@@ -481,135 +458,19 @@ namespace KinectRecorderAccord
             {
                 if (depthFrame != null)
                 {
-                    // the fastest way to process the body index data is to directly access 
-                    // the underlying buffer
-                    using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
-                    {
-                        int width = this.depthFrameDescription.Width;
-                        int height = this.depthFrameDescription.Height;
-                        // verify data and write the color data to the display bitmap
-                        if (((width * height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)) &&
-                            (width == this.depthBitmap.PixelWidth) && (height == this.depthBitmap.PixelHeight))
-                        {
-                            // Note: In order to see the full range of depth (including the less reliable far field depth)
-                            // we are setting maxDepth to the extreme potential depth threshold
-                            //ushort maxDepth = ushort.MaxValue;
+                    ushort maxDepth = depthFrame.DepthMaxReliableDistance;
+                    ushort minDepth = depthFrame.DepthMinReliableDistance;
 
-                            // If you wish to filter by reliable depth distance, uncomment the following line:
-                            ushort maxDepth = depthFrame.DepthMaxReliableDistance;
-                            ushort minDepth = depthFrame.DepthMinReliableDistance;
+                    depthHandler.DepthFrameArrival(depthFrame, ref depthFrameProcessed, this.fps, depthBitmap);
 
-                            this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, minDepth, maxDepth);
-                            depthFrameProcessed = true;
-
-                            depthResolutionText.Content = string.Format("Resolution :  {0} x {1}   min: {2}  max: {3}", width.ToString(), height.ToString(), minDepth, maxDepth);
-                            skeletalResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-
-                            // depthFrame.CopyFrameDataToArray(this.depthPixelBuffer); done in processing function
-                            if (isRecording)
-                            {
-
-                                this.dBitmap = ByteArrayToBitmap(this.depthPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                                this.depthBitmapBuffer.Enqueue(this.dBitmap);
-                                System.GC.Collect();
-                                this.recordedDepthFrameCount++;
-                                if (this.fps < 16.0)
-                                {
-                                    Console.WriteLine("fps drop yaşandı");
-                                    this.depthBitmapBuffer.Enqueue(this.dBitmap);
-                                    this.recordedDepthFrameCount++;
-                                }
-                            }
-                        }
-                    }
+                    depthResolutionText.Content = string.Format("Resolution :  {0} x {1}   min: {2}  max: {3} BBP: {4}", depthHandler.Width.ToString(), depthHandler.Height.ToString(), minDepth, maxDepth, depthHandler.getBPP());
+                    skeletalResolutionText.Content = string.Format("Resolution :  {0} x {1}", depthHandler.Width.ToString(), depthHandler.Height.ToString());
                 }
             }
 
             if (depthFrameProcessed)
             {
-                this.RenderDepthPixels();
-            }
-        }
-
-        /*
-        Bitmap UshortArrayToBitmap(ushort[] array, int width, int height, System.Drawing.Imaging.PixelFormat pixelFormat)
-        {
-
-            Bitmap bitmapFrame = new Bitmap(width, height, pixelFormat);
-
-            BitmapData bitmapData = bitmapFrame.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, bitmapFrame.PixelFormat);
-
-            System.Console.WriteLine(array.Length);
-            IntPtr intPointer = bitmapData.Scan0;
-            Copy(array, intPointer, 0, array.Length);
-            
-            bitmapFrame.UnlockBits(bitmapData);
-            return bitmapFrame;
-
-        }
-
-        public static void Copy(ushort[] source, IntPtr destination, int startIndex, int length)
-        {
-            unsafe
-            {
-                var destinationPtr = (ushort*)destination;
-                for (int i = startIndex; i < startIndex + length; ++i)
-                {
-                    *destinationPtr++ = source[i];
-                }
-            }
-        }*/
-
-        private unsafe void ProcessDepthFrameData(IntPtr depthFrameData, uint depthFrameDataSize, ushort minDepth, ushort maxDepth)
-        {
-            this.MapDepthToByte = (maxDepth - minDepth) / 256.0;
-            //System.Console.WriteLine(MapDepthToByte);
-            
-            // depth frame data is a 16 bit value
-            ushort* frameData = (ushort*)depthFrameData;
-
-            // convert depth to a visual representation
-            int stride = 0, strideWrite = 0, j, k;
-            for (int i = 0; i < (int)(depthFrameDataSize / this.depthFrameDescription.BytesPerPixel); ++i)
-            {
-                // Get the depth for this pixel
-                ushort depth = frameData[i];
-                j = stride + i;
-                k = strideWrite + i;
-                // To convert to a byte, we're mapping the depth value to the byte range.
-                // Values outside the reliable depth range are mapped to 0 (black).
-                if (depth >= minDepth && depth <= maxDepth)
-                {
-                    this.depthPixels[j] = (byte)(depth / MapDepthToByte);
-                    this.depthPixels[j+1] = (byte)(depth / MapDepthToByte);
-                    this.depthPixels[j+2] = (byte)(depth / MapDepthToByte);
-
-                    this.depthPixelBuffer[k] = (byte) (frameData[i] / 1000);
-                    this.depthPixelBuffer[k] = (byte) ((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k] = (byte) (frameData[i] % 100);
-                }
-                else if (depth < minDepth)
-                {
-                    this.depthPixels[j] = (byte) 160;
-                    this.depthPixels[j+1] = (byte) 0;
-                    this.depthPixels[j+2] = (byte) 0;
-
-                    this.depthPixelBuffer[k] = (byte) 0; //(frameData[i] / 1000);
-                    this.depthPixelBuffer[k] = (byte) 0; //((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k] = (byte) 0; //(frameData[i] % 100);
-                }
-                else 
-                {
-                    this.depthPixels[j] = (byte) 0;
-                    this.depthPixels[j+1] = (byte) 0;
-                    this.depthPixels[j+2] = (byte) 160;
-
-                    this.depthPixelBuffer[k] = (byte) 0; //(frameData[i] / 1000);
-                    this.depthPixelBuffer[k] = (byte) 0; //((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k] = (byte) 0; //(frameData[i] % 100);
-                }
-                stride += 3;
-                strideWrite += 2;
+                RenderDepthPixels();
             }
         }
 
@@ -618,12 +479,14 @@ namespace KinectRecorderAccord
         /// </summary>
         private void RenderDepthPixels()
         {
-            this.depthBitmap.WritePixels(
-                new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
-                this.depthPixels,
-                this.depthBitmap.PixelWidth * (int)BytesPerPixel,
+            depthBitmap.WritePixels(
+                new System.Windows.Int32Rect(0, 0, depthBitmap.PixelWidth, depthBitmap.PixelHeight),
+                depthHandler.depthPixels,
+                depthBitmap.PixelWidth * (int)BytesPerPixel,
                 0);
         }
+
+
 
 
         private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
@@ -676,7 +539,7 @@ namespace KinectRecorderAccord
                             if (this.fps < 16.0)
                             {
                                 Console.WriteLine("fps drop yaşandı");
-                                this.bodyBitmapBuffer.Enqueue(this.dBitmap);
+                                this.bodyBitmapBuffer.Enqueue(this.bBitmap);
                                 this.recordedBodyFrameCount++;
                             }
                         }
