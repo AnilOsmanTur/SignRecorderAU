@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Accord.Video.FFMPEG;
 using System.Drawing;
 using Microsoft.Kinect;
 using System.Windows.Media.Imaging;
-using System.Windows.Media;
 using System.Runtime.InteropServices;
 
 namespace KinectRecorderAccord
@@ -24,7 +24,7 @@ namespace KinectRecorderAccord
         private Bitmap dBitmap;
 
         private Queue<Bitmap> depthBitmapBuffer = new Queue<Bitmap>();
-        byte[] depthPixelBuffer;
+        public byte[] depthPixelBuffer;
 
         private String depthVideoPath;
         private VideoFileWriter depthWriter;
@@ -38,11 +38,8 @@ namespace KinectRecorderAccord
         
         private bool depthRecording = false;
 
-        private readonly object _lock;
-
-        public DepthHandler(FrameDescription fd, object l)
+        public DepthHandler(FrameDescription fd)
         {
-            _lock = l;
 
             depthFrameDescription = fd;
             Width = fd.Width;
@@ -60,21 +57,21 @@ namespace KinectRecorderAccord
         {
             while (true)
             {
-                lock (_lock)
+                // Console.WriteLine("Depth");
+                if (depthBitmapBuffer.Count > 0)
                 {
-                    Console.WriteLine("Depth");
-                    if (depthBitmapBuffer.Count > 0)
-                    {
-                        //Console.WriteLine(depthBitmapBuffer.Count);
-                        this.depthWriter.WriteVideoFrame(depthBitmapBuffer.Dequeue());
-                    }
-                    else if (!depthRecording)
-                    {
-
-                        depthWriter.Close();
-                        Console.WriteLine("depth writer closed.");
-                        break;
-                    }
+                    //Console.WriteLine(depthBitmapBuffer.Count);
+                    this.depthWriter.WriteVideoFrame(depthBitmapBuffer.Dequeue());
+                }
+                else if (!depthRecording)
+                {
+                    depthWriter.Close();
+                    Console.WriteLine("depth writer closed.");
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(1000);
                 }
             }
         }
@@ -98,8 +95,6 @@ namespace KinectRecorderAccord
         {
             depthRecording = state;
         }
-
-
 
 
         Bitmap ByteArrayToBitmap(byte[] array, int width, int height, System.Drawing.Imaging.PixelFormat pixelFormat)
@@ -129,8 +124,8 @@ namespace KinectRecorderAccord
             using (Microsoft.Kinect.KinectBuffer depthBuffer = df.LockImageBuffer())
             {
                 // verify data and write the color data to the display bitmap
-                if (((Width * Height) == (depthBuffer.Size / getBPP())) &&
-                    (Width == depthBitmap.PixelWidth) && (Height == depthBitmap.PixelHeight))
+                if (((df.FrameDescription.Width * df.FrameDescription.Height) == (depthBuffer.Size / getBPP())) &&
+                    (df.FrameDescription.Width == depthBitmap.PixelWidth) && (df.FrameDescription.Height == depthBitmap.PixelHeight))
                 {
                     // Note: In order to see the full range of depth (including the less reliable far field depth)
                     // we are setting maxDepth to the extreme potential depth threshold

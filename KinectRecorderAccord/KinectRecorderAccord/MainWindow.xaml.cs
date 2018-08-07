@@ -25,27 +25,14 @@ namespace KinectRecorderAccord
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-
-        private SkeletonHandler skeletonHandler;
-
-        private DepthHandler depthHandler;
-
-        //Bodyindex variables
-
         /// Size of the RGB pixel in the bitmap
-        private const int BytesPerPixel = 4;
-        /// Collection of colors to be used to display the BodyIndexFrame data.
-        private static readonly uint[] BodyColor =
-        {
-            0x0000FF00,
-            0x00FF0000,
-            0xFFFF4000,
-            0x40FFFF00,
-            0xFF40FF00,
-            0xFF808000,
-        };
-        /// Intermediate storage for frame data converted to color
-        private uint[] bodyIndexPixels = null;
+        private const int BytesPerPixel = 4; 
+
+        // frameType handlers
+        private SkeletonHandler skeletonHandler;
+        private DepthHandler depthHandler;
+        private ColorHandler colorHandler;
+        private BodyIndexHandler bodyIHandler;
 
         //kinect sensor
         private KinectSensor kinectSensor = null;
@@ -56,40 +43,19 @@ namespace KinectRecorderAccord
         private BodyFrameReader bodyFrameReader = null;
         private BodyIndexFrameReader bodyIndexFrameReader = null;
 
-        // FrameDescriptors
-        private FrameDescription colorFrameDescription = null;
-        private FrameDescription bodyIndexFrameDescription = null;
-
         // writeable bitmaps
         private WriteableBitmap colorBitmap = null;
         private WriteableBitmap depthBitmap = null;
         private WriteableBitmap bodyIndexBitmap = null;
         private DrawingImage skeletalImage = null;
 
-        private Bitmap cBitmap;
-        private Bitmap bBitmap;
-
-        // bitmap var
-        private Queue<System.Drawing.Bitmap> colorBitmapBuffer = new Queue<System.Drawing.Bitmap>();
-        byte[] colorPixelBuffer;
-        private Queue<System.Drawing.Bitmap> bodyBitmapBuffer = new Queue<System.Drawing.Bitmap>();
-        byte[] bodyPixelBuffer;
-
-        // writer class
-        private VideoFileWriter colorWriter;
-        private VideoFileWriter bodyWriter;
-
-        private String colorVideoPath;
         private String SkeletalDataPath;
-        private String BodyIndexPath;
-
+        
         private bool isRecording = false;
-        private UInt32 recordedColorFrameCount = 0;
-        private UInt32 recordedBodyFrameCount = 0;
 
         double fps;
 
-        private readonly object _lock = new object();
+        //private readonly object _lock = new object();
 
         public MainWindow()
         {
@@ -114,22 +80,17 @@ namespace KinectRecorderAccord
 
         // initialize color stream
         public void InitializeColorStream()
-        {
-            
+        {            
             this.colorFrameReader = this.kinectSensor.ColorFrameSource.OpenReader();
-            this.colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-            this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-            this.colorPixelBuffer = new byte[colorFrameDescription.Width * colorFrameDescription.Height* 4];
+            colorHandler = new ColorHandler(this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra)); //, _lock);
+            this.colorBitmap = new WriteableBitmap(colorHandler.Width, colorHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
         }
 
         public void InitializeDepthStream()
         {
             this.depthFrameReader = this.kinectSensor.DepthFrameSource.OpenReader();
-
-            depthHandler = new DepthHandler(this.kinectSensor.DepthFrameSource.FrameDescription, _lock);
-
+            depthHandler = new DepthHandler(this.kinectSensor.DepthFrameSource.FrameDescription);
             this.depthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-            
         }
 
         public void InitializeSkeletalStream()
@@ -137,10 +98,8 @@ namespace KinectRecorderAccord
             skeletonHandler = new SkeletonHandler(this.kinectSensor.DepthFrameSource.FrameDescription.Width,
                                            this.kinectSensor.DepthFrameSource.FrameDescription.Height,
                                            this.kinectSensor.CoordinateMapper);
-
             // open the reader for the body frames
             this.bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
-
             this.skeletalImage = skeletonHandler.getImageSource();
 
         }
@@ -149,11 +108,10 @@ namespace KinectRecorderAccord
         {
             // open the reader for the depth frames
             this.bodyIndexFrameReader = this.kinectSensor.BodyIndexFrameSource.OpenReader();
-            this.bodyIndexFrameDescription = this.kinectSensor.BodyIndexFrameSource.FrameDescription;
-            this.bodyIndexPixels = new uint[this.bodyIndexFrameDescription.Width * this.bodyIndexFrameDescription.Height];
+            bodyIHandler = new BodyIndexHandler(this.kinectSensor.BodyIndexFrameSource.FrameDescription);
             // create the bitmap to display
-            this.bodyIndexBitmap = new WriteableBitmap(this.bodyIndexFrameDescription.Width, this.bodyIndexFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-            this.bodyPixelBuffer = new byte[depthHandler.Width * depthHandler.Height];
+            this.bodyIndexBitmap = new WriteableBitmap(bodyIHandler.Width, bodyIHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
+            
         }
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
@@ -196,53 +154,6 @@ namespace KinectRecorderAccord
             }
         }
 
-        public void colorWrite()
-        {
-            while (true)
-            {
-                lock (_lock)
-                {
-                    Console.WriteLine("color");
-                    
-                    if (colorBitmapBuffer.Count > 0)
-                    {
-                        //Console.WriteLine(colorBitmapBuffer.Count);
-                        this.colorWriter.WriteVideoFrame(colorBitmapBuffer.Dequeue());
-                    }
-                    else if (!isRecording)
-                    {
-                        colorWriter.Close();
-                        Console.WriteLine("color writer closed.");
-                        break;
-                    }
-                }
-            }
-        }
-
-
-
-        private void bodyWrite()
-        {
-            while (true)
-            {
-                lock (_lock)
-                {
-                    Console.WriteLine("Body");
-                    if (bodyBitmapBuffer.Count > 0)
-                    {
-                        //Console.WriteLine(bodyBitmapBuffer.Count);
-                        this.bodyWriter.WriteVideoFrame(bodyBitmapBuffer.Dequeue());
-                    }
-                    else if (!isRecording)
-                    {
-                        bodyWriter.Close();
-                        Console.WriteLine("body writer closed.");
-                        break;
-                    }
-                }
-            }
-        }
-
         public void recordBtn_Click(Object sender, RoutedEventArgs e)
         {
             if (isRecording)
@@ -251,6 +162,9 @@ namespace KinectRecorderAccord
                 this.recordBtn.Content = "Start Recording";
                 this.isRecording = false;
                 depthHandler.setRecordingState(false);
+                colorHandler.setRecordingState(false);
+                bodyIHandler.setRecordingState(false);
+
                 // start writing file process
                 this.RecordingTextBlock.Text = "Recording Stoped";
 
@@ -258,33 +172,33 @@ namespace KinectRecorderAccord
             }
             else
             {
+                this.isRecording = true;
+                depthHandler.setRecordingState(true);
+                colorHandler.setRecordingState(true);
+                bodyIHandler.setRecordingState(true);
+
+                this.recordBtn.Content = "Stop Recording";
+                
+                // this will fire up the adding data to lists
+                this.RecordingTextBlock.Text = "Recording";
+
                 int bitRate = 12000000;
 
-                colorVideoPath = "C:/Users/AnılOsman/Desktop/testColor.avi";
+                colorHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testColor.avi", bitRate);
                 depthHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testDepth.avi", bitRate);
-                BodyIndexPath = "C:/Users/AnılOsman/Desktop/testBody.avi";
-                // writer init
+                bodyIHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testBody.avi", bitRate);
 
-                Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-                colorWriter = new VideoFileWriter();
-                colorWriter.Open(colorVideoPath, 1920, 1080, rationalFrameRate, VideoCodec.MPEG4, bitRate);
-                
-                bodyWriter = new VideoFileWriter();
-                bodyWriter.Open(BodyIndexPath, 512, 424, rationalFrameRate, VideoCodec.MPEG4, bitRate);
-
-                Thread colorWriteThread = new Thread(new ThreadStart(colorWrite));
+                Thread colorWriteThread = new Thread(new ThreadStart(colorHandler.Write));
                 Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
-                Thread bodyWriteThread = new Thread(new ThreadStart(bodyWrite));
+                Thread bodyWriteThread = new Thread(new ThreadStart(bodyIHandler.Write));
+
+                colorWriteThread.Priority = ThreadPriority.BelowNormal;
+                depthWriteThread.Priority = ThreadPriority.BelowNormal;
+                bodyWriteThread.Priority = ThreadPriority.BelowNormal;
 
                 colorWriteThread.Start();
                 depthWriteThread.Start();
                 bodyWriteThread.Start();
-                
-                this.recordBtn.Content = "Stop Recording";
-                this.isRecording = true;
-                depthHandler.setRecordingState(true);
-                // this will fire up the adding data to lists
-                this.RecordingTextBlock.Text = "Recording";
             }
         }
 
@@ -385,52 +299,17 @@ namespace KinectRecorderAccord
                     this.fps = 1 / colorFrame.ColorCameraSettings.FrameInterval.TotalSeconds;
                     colorFpsText.Content = "FPS :  " + fps.ToString("0.###");
 
-                    FrameDescription colorFrameDescription = colorFrame.FrameDescription;
+                    int width = colorFrame.FrameDescription.Width;
+                    int height = colorFrame.FrameDescription.Height;
 
-                    using (KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
-                    {
-                        this.colorBitmap.Lock();
+                    colorHandler.ColorFrameArrival(colorFrame, ref colorBitmap, fps);
 
-                        int width = this.colorFrameDescription.Width;
-                        int height = this.colorFrameDescription.Height;
-                        // verify data and write the new color frame data to the display bitmap
-                        if ((width == this.colorBitmap.PixelWidth) && (height == this.colorBitmap.PixelHeight))
-                        {
-                            
-                            colorFrame.CopyConvertedFrameDataToIntPtr(
-                                this.colorBitmap.BackBuffer,
-                                (uint)(width * height * 4),
-                                ColorImageFormat.Bgra);
-                            colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-                            this.colorBitmap.AddDirtyRect(new Int32Rect(0, 0, this.colorBitmap.PixelWidth, this.colorBitmap.PixelHeight));
-                            this.colorBitmap.Unlock();
-
-                            colorFrame.CopyConvertedFrameDataToArray(colorPixelBuffer, ColorImageFormat.Bgra);
-
-                            if (isRecording)
-                            {
-                                this.cBitmap = ByteArrayToBitmap(colorPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                                this.colorBitmapBuffer.Enqueue(this.cBitmap);
-                                System.GC.Collect();
-                                //saveCapture();
-                                this.recordedColorFrameCount++;
-                                if (fps < 16.0)
-                                {
-                                    Console.WriteLine("fps drop yaşandı");
-                                    this.colorBitmapBuffer.Enqueue(this.cBitmap);
-                                    //saveCapture();
-                                    this.recordedColorFrameCount++;
-                                }
-                            }
-                       
-                        }
-
-                        this.RecordingTextBlock.Text = string.Format("Recording: saved color frame count: {0}\n depth: {1}\n body: {2}",
-                                                                    this.recordedColorFrameCount,
-                                                                    depthHandler.frameCount,
-                                                                    this.recordedBodyFrameCount);
-                       
-                    }
+                    colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
+                    RecordingTextBlock.Text = string.Format("Recording: saved color frame count: {0}\n depth: {1}\n body: {2}",
+                                                                colorHandler.frameCount,
+                                                                depthHandler.frameCount,
+                                                                bodyIHandler.frameCount);
+                    
                 }
             }
         }
@@ -463,8 +342,15 @@ namespace KinectRecorderAccord
 
                     depthHandler.DepthFrameArrival(depthFrame, ref depthFrameProcessed, this.fps, depthBitmap);
 
-                    depthResolutionText.Content = string.Format("Resolution :  {0} x {1}   min: {2}  max: {3} BBP: {4}", depthHandler.Width.ToString(), depthHandler.Height.ToString(), minDepth, maxDepth, depthHandler.getBPP());
-                    skeletalResolutionText.Content = string.Format("Resolution :  {0} x {1}", depthHandler.Width.ToString(), depthHandler.Height.ToString());
+                    depthResolutionText.Content = string.Format("Resolution :  {0} x {1}   min: {2}  max: {3} BBP: {4}", 
+                                                                depthHandler.Width.ToString(),
+                                                                depthHandler.Height.ToString(),
+                                                                minDepth,
+                                                                maxDepth,
+                                                                depthHandler.getBPP());
+                    skeletalResolutionText.Content = string.Format("Resolution :  {0} x {1}", 
+                                                                depthHandler.Width.ToString(),
+                                                                depthHandler.Height.ToString());
                 }
             }
 
@@ -514,36 +400,11 @@ namespace KinectRecorderAccord
             {
                 if (bodyIndexFrame != null)
                 {
-                    // the fastest way to process the body index data is to directly access 
-                    // the underlying buffer
-                    using (Microsoft.Kinect.KinectBuffer bodyIndexBuffer = bodyIndexFrame.LockImageBuffer())
-                    {
-                        int width = this.bodyIndexFrameDescription.Width;
-                        int height = this.bodyIndexFrameDescription.Height;
-                        // verify data and write the color data to the display bitmap
-                        if (((width * height) == bodyIndexBuffer.Size) &&
-                            (width == this.bodyIndexBitmap.PixelWidth) && (height == this.bodyIndexBitmap.PixelHeight))
-                        {
-                            indexResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-                            this.ProcessBodyIndexFrameData(bodyIndexBuffer.UnderlyingBuffer, bodyIndexBuffer.Size);
-                            bodyIndexFrameProcessed = true;
-                        }
+                    bodyIHandler.BodyIndexFrameArrival(bodyIndexFrame, ref bodyIndexFrameProcessed, this.fps, bodyIndexBitmap);
 
-                        if (isRecording)
-                        {
-
-                            this.bBitmap = ByteArrayToBitmap(this.bodyPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
-                            this.bodyBitmapBuffer.Enqueue(this.bBitmap);
-                            System.GC.Collect();
-                            this.recordedBodyFrameCount++;
-                            if (this.fps < 16.0)
-                            {
-                                Console.WriteLine("fps drop yaşandı");
-                                this.bodyBitmapBuffer.Enqueue(this.bBitmap);
-                                this.recordedBodyFrameCount++;
-                            }
-                        }
-                    }
+                    indexResolutionText.Content = string.Format("Resolution :  {0} x {1}", 
+                                            bodyIndexFrame.FrameDescription.Width.ToString(),
+                                            bodyIndexFrame.FrameDescription.Height.ToString());
                 }
             }
 
@@ -554,49 +415,13 @@ namespace KinectRecorderAccord
         }
 
         /// <summary>
-        /// Directly accesses the underlying image buffer of the BodyIndexFrame to 
-        /// create a displayable bitmap.
-        /// This function requires the /unsafe compiler option as we make use of direct
-        /// access to the native memory pointed to by the bodyIndexFrameData pointer.
-        /// </summary>
-        /// <param name="bodyIndexFrameData">Pointer to the BodyIndexFrame image data</param>
-        /// <param name="bodyIndexFrameDataSize">Size of the BodyIndexFrame image data</param>
-        private unsafe void ProcessBodyIndexFrameData(IntPtr bodyIndexFrameData, uint bodyIndexFrameDataSize)
-        {
-            byte* frameData = (byte*)bodyIndexFrameData;
-
-            // convert body index to a visual representation
-            for (int i = 0; i < (int)bodyIndexFrameDataSize; ++i)
-            {
-                // the BodyColor array has been sized to match
-                // BodyFrameSource.BodyCount
-                if (frameData[i] < BodyColor.Length)
-                {
-                    // this pixel is part of a player,
-                    // display the appropriate color
-                    this.bodyIndexPixels[i] = BodyColor[frameData[i]];
-                    
-                    this.bodyPixelBuffer[i] = (byte) 255;
-                }
-                else
-                {
-                    // this pixel is not part of a player
-                    // display black
-                    this.bodyIndexPixels[i] = 0x00000000;
-                    
-                    this.bodyPixelBuffer[i] = (byte) 0;
-                }
-            }
-        }
-
-        /// <summary>
         /// Renders color pixels into the writeableBitmap.
         /// </summary>
         private void RenderBodyIndexPixels()
         {
             this.bodyIndexBitmap.WritePixels(
                 new Int32Rect(0, 0, this.bodyIndexBitmap.PixelWidth, this.bodyIndexBitmap.PixelHeight),
-                this.bodyIndexPixels,
+                bodyIHandler.bodyIndexPixels,
                 this.bodyIndexBitmap.PixelWidth * (int)BytesPerPixel,
                 0);
         }
