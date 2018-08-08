@@ -103,21 +103,6 @@ namespace KinectRecorderAccord
             bodyRecording = state;
         }
 
-        Bitmap ByteArrayToBitmap(byte[] array, int width, int height, System.Drawing.Imaging.PixelFormat pixelFormat)
-        {
-
-            Bitmap bitmapFrame = new Bitmap(width, height, pixelFormat);
-
-            System.Drawing.Imaging.BitmapData bitmapData = bitmapFrame.LockBits(new Rectangle(0, 0, width, height), System.Drawing.Imaging.ImageLockMode.WriteOnly, bitmapFrame.PixelFormat);
-
-            IntPtr intPointer = bitmapData.Scan0;
-            Marshal.Copy(array, 0, intPointer, array.Length);
-
-            bitmapFrame.UnlockBits(bitmapData);
-            return bitmapFrame;
-
-        }
-
         public void BodyIndexFrameArrival(BodyIndexFrame bif, ref bool frameProcessed, double fps, WriteableBitmap bodyIndexBitmap)
         {
             // the fastest way to process the body index data is to directly access 
@@ -137,7 +122,7 @@ namespace KinectRecorderAccord
 
                 if (bodyRecording)
                 {
-                    bBitmap = ByteArrayToBitmap(bodyPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
+                    bBitmap = UtilityClass.ByteArrayToBitmap(bodyPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
                     bodyBitmapBuffer.Enqueue(bBitmap);
                     System.GC.Collect();
                     frameCount++;

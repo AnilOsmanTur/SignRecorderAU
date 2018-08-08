@@ -53,6 +53,13 @@ namespace KinectRecorderAccord
         
         private bool isRecording = false;
 
+        // save check box swithes
+        private bool colorSave = true;
+        private bool depthSave = true;
+        private bool bodySave = true;
+        private bool skeletonSave = true;
+
+
         double fps;
 
         //private readonly object _lock = new object();
@@ -173,32 +180,77 @@ namespace KinectRecorderAccord
             else
             {
                 this.isRecording = true;
-                depthHandler.setRecordingState(true);
-                colorHandler.setRecordingState(true);
-                bodyIHandler.setRecordingState(true);
-
+                
+                writerHelper();
+                
                 this.recordBtn.Content = "Stop Recording";
                 
                 // this will fire up the adding data to lists
-                this.RecordingTextBlock.Text = "Recording";
+               
+                if (!colorSave && !depthSave && !bodySave && !skeletonSave)
+                {
+                    this.RecordingTextBlock.Text = "No data checked. Nothing will be saved!";
+                }
+                else
+                {
+                    this.RecordingTextBlock.Text = "Recording";
+                }
 
-                int bitRate = 12000000;
+                
+                
+            }
+        }
 
+        private void writerHelper()
+        {
+            int bitRate = 12000000;
+            if (colorSave)
+            {
+                colorHandler.setRecordingState(true);
                 colorHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testColor.avi", bitRate);
-                depthHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testDepth.avi", bitRate);
-                bodyIHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testBody.avi", bitRate);
-
                 Thread colorWriteThread = new Thread(new ThreadStart(colorHandler.Write));
-                Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
-                Thread bodyWriteThread = new Thread(new ThreadStart(bodyIHandler.Write));
-
                 colorWriteThread.Priority = ThreadPriority.BelowNormal;
-                depthWriteThread.Priority = ThreadPriority.BelowNormal;
-                bodyWriteThread.Priority = ThreadPriority.BelowNormal;
-
                 colorWriteThread.Start();
+            }
+            else
+            {
+                colorHandler.setRecordingState(false);
+            }
+
+            if (depthSave)
+            {
+                depthHandler.setRecordingState(true);
+                depthHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testDepth.avi", bitRate);
+                Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
+                depthWriteThread.Priority = ThreadPriority.BelowNormal;
                 depthWriteThread.Start();
+            }
+            else
+            {
+                depthHandler.setRecordingState(false);
+            }
+
+            if (bodySave)
+            {
+                bodyIHandler.setRecordingState(true);
+                bodyIHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testBody.avi", bitRate);
+                Thread bodyWriteThread = new Thread(new ThreadStart(bodyIHandler.Write));
+                bodyWriteThread.Priority = ThreadPriority.BelowNormal;
                 bodyWriteThread.Start();
+
+            }
+            else
+            {
+                bodyIHandler.setRecordingState(false);
+            }
+
+            if (skeletonSave)
+            {
+
+            }
+            else
+            {
+
             }
         }
 
@@ -426,6 +478,42 @@ namespace KinectRecorderAccord
                 0);
         }
 
+        // color data check box bindings
+        private void ColorSaveCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            colorSave = true;
+        }
+        private void ColorSaveCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            colorSave = false;
+        }
+        // depth data check box bindings
+        private void DepthSaveCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            depthSave = true;
+        }
+        private void DepthSaveCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            depthSave = false;
+        }
+        // body index data check box bindings
+        private void BodySaveCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            bodySave = true;
+        }
+        private void BodySaveCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            bodySave = false;
+        }
+        // skeletal data check box bindings
+        private void SkeletonSaveCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            skeletonSave = true;
+        }
+        private void SkeletonSaveCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            skeletonSave = false;
+        }
 
     }
 }
