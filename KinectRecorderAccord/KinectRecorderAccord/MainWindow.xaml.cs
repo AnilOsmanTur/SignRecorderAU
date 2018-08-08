@@ -168,10 +168,19 @@ namespace KinectRecorderAccord
                 
                 this.recordBtn.Content = "Start Recording";
                 this.isRecording = false;
+
+                this.StatusTextBlock.Text = string.Format("Saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}",
+                                                                colorHandler.frameCount,
+                                                                depthHandler.frameCount,
+                                                                bodyIHandler.frameCount,
+                                                                skeletonHandler.frameCount);
                 depthHandler.setRecordingState(false);
                 colorHandler.setRecordingState(false);
                 bodyIHandler.setRecordingState(false);
+                skeletonHandler.setRecordingState(false);
 
+                // writing can be done in one
+                skeletonHandler.WriteAll();
                 // start writing file process
                 this.RecordingTextBlock.Text = "Recording Stoped";
 
@@ -246,11 +255,12 @@ namespace KinectRecorderAccord
 
             if (skeletonSave)
             {
-
+                skeletonHandler.setRecordingState(true);
+                skeletonHandler.SetFilePath("C:/Users/AnılOsman/Desktop/testSkeleton.csv");
             }
             else
             {
-
+                skeletonHandler.setRecordingState(true);
             }
         }
 
@@ -357,10 +367,11 @@ namespace KinectRecorderAccord
                     colorHandler.ColorFrameArrival(colorFrame, ref colorBitmap, fps);
 
                     colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-                    RecordingTextBlock.Text = string.Format("Recording: saved color frame count: {0}\n depth: {1}\n body: {2}",
+                    RecordingTextBlock.Text = string.Format("Recording: saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}",
                                                                 colorHandler.frameCount,
                                                                 depthHandler.frameCount,
-                                                                bodyIHandler.frameCount);
+                                                                bodyIHandler.frameCount,
+                                                                skeletonHandler.frameCount);
                     
                 }
             }

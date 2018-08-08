@@ -101,6 +101,7 @@ namespace KinectRecorderAccord
         public void setRecordingState(bool state)
         {
             bodyRecording = state;
+            frameCount = 0;
         }
 
         public void BodyIndexFrameArrival(BodyIndexFrame bif, ref bool frameProcessed, double fps, WriteableBitmap bodyIndexBitmap)

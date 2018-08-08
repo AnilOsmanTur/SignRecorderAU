@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Kinect;
-
+using CsvHelper;
+using System.Collections;
 
 namespace KinectRecorderAccord
 {
@@ -77,7 +79,6 @@ namespace KinectRecorderAccord
         /// </summary>
         private CoordinateMapper coordinateMapper = null;
 
-
         /// <summary>
         /// Array for the bodies
         /// </summary>
@@ -103,13 +104,26 @@ namespace KinectRecorderAccord
         /// </summary>
         private List<Pen> bodyColors;
 
+        // writing variables
+        // skeleton data array
+        private double[] skeletonDataArray;
+        private int stride = 7;
+        private Queue<SkeletonData> skeletonBuffer = new Queue<SkeletonData>();
+
+        private bool skeletonRecording = false;
+        private String skeletonFilePath;
+        public UInt32 frameCount = 0;
+
+        private CsvWriter csvWriter = null;
+        private StreamWriter stream = null;
+
         public SkeletonHandler(int width, int height, CoordinateMapper coordMap)
         {
 
             this.displayHeight = height;
             this.displayWidth = width;
 
-            this.coordinateMapper = coordMap;
+            coordinateMapper = coordMap;
 
             // a bone defined as a line between two joints
             this.bones = new List<Tuple<JointType, JointType>>();
@@ -163,6 +177,7 @@ namespace KinectRecorderAccord
             // Create an image source that we can use in our image control
             this.imageSource = new DrawingImage(this.drawingGroup);
 
+            skeletonDataArray = new double[25*7];
         }
 
         public DrawingImage getImageSource()
@@ -199,12 +214,14 @@ namespace KinectRecorderAccord
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
 
                     int penIndex = 0;
+                    int bodyCount = 0;
                     foreach (Body body in this.bodies)
                     {
                         Pen drawPen = this.bodyColors[penIndex++];
 
                         if (body.IsTracked)
                         {
+                            bodyCount++;
                             this.DrawClippedEdges(body, dc);
 
                             IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
@@ -212,6 +229,8 @@ namespace KinectRecorderAccord
                             // convert the joint points to depth (display) space
                             Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
 
+                            //var values = UtilityClass.GetValues<JointType>();
+                            //foreach (JointType jointType in values)
                             foreach (JointType jointType in joints.Keys)
                             {
                                 // sometimes the depth(Z) of an inferred joint may show as negative
@@ -222,9 +241,33 @@ namespace KinectRecorderAccord
                                     position.Z = InferredZPositionClamp;
                                 }
 
-                                DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(position);
+                                DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(position); // point mapped to depth
                                 jointPoints[jointType] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                                ColorSpacePoint colorSpacePoint = this.coordinateMapper.MapCameraPointToColorSpace(position); // points mapped to color
+
+                                if (bodyCount == 1 && skeletonRecording)
+                                {
+
+                                    int i = (int)jointType;
+                                    i *= stride;
+                                    skeletonDataArray[i++] = position.X;
+                                    skeletonDataArray[i++] = position.Y;
+                                    skeletonDataArray[i++] = position.Z;
+                                    skeletonDataArray[i++] = depthSpacePoint.X;
+                                    skeletonDataArray[i++] = depthSpacePoint.Y;
+                                    skeletonDataArray[i++] = colorSpacePoint.X;
+                                    skeletonDataArray[i++] = colorSpacePoint.Y;
+                                    System.Console.WriteLine(string.Format("array index {0}", i));
+                                }
+                                //System.Console.WriteLine(string.Format("body count {0}", bodyCount));
                             }
+
+                            if (bodyCount == 1 && skeletonRecording)
+                            {
+                                skeletonBuffer.Enqueue(new SkeletonData(frameCount, skeletonDataArray));
+                                frameCount++;
+                            }
+
 
                             this.DrawBody(joints, jointPoints, dc, drawPen);
 
@@ -373,6 +416,52 @@ namespace KinectRecorderAccord
                     null,
                     new Rect(this.displayWidth - ClipBoundsThickness, 0, ClipBoundsThickness, this.displayHeight));
             }
+        }
+
+        public void SetFilePath(string path)
+        {
+            skeletonFilePath = path;
+            OpenSkeletonWriter();
+        }
+
+        public void OpenSkeletonWriter()
+        {
+            freeWriters();
+            stream = new StreamWriter(skeletonFilePath);
+            csvWriter = new CsvWriter(stream);
+            
+        }
+
+        private void freeWriters()
+        {
+            if (stream != null)
+            {
+                stream.Dispose();
+                stream = null;
+            }
+            if (csvWriter != null)
+            {
+                csvWriter.Dispose();
+                csvWriter = null;
+
+            }
+            if (skeletonBuffer.Count != 0)
+            {
+                skeletonBuffer.Clear();
+            }
+        }
+
+        public void setRecordingState(bool state)
+        {
+            skeletonRecording = state;
+            frameCount = 0;
+        }
+
+        public void WriteAll()
+        {
+            IEnumerable<SkeletonData> records = skeletonBuffer.ToList<SkeletonData>();
+            csvWriter.WriteRecords<SkeletonData>(records);
+            freeWriters();
         }
 
     }

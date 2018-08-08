@@ -94,6 +94,7 @@ namespace KinectRecorderAccord
         public void setRecordingState(bool state)
         {
             depthRecording = state;
+            frameCount = 0;
         }
 
 

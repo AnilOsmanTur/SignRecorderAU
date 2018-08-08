@@ -87,6 +87,7 @@ namespace KinectRecorderAccord
         public void setRecordingState(bool state)
         {
             colorRecording = state;
+            frameCount = 0;
         }
 
         public void ColorFrameArrival(ColorFrame colorFrame, ref WriteableBitmap colorBitmap, double fps)
