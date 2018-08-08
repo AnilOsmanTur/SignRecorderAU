@@ -119,6 +119,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BodyIndexHandler.cs" />
+    <Compile Include="InfraredHandler.cs" />
     <Compile Include="SkeletonData.cs" />
     <Compile Include="UtilityClass.cs" />
     <Compile Include="ColorHandler.cs" />
