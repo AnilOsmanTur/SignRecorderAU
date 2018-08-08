@@ -15,6 +15,7 @@ using System.Drawing;
 using System.Threading;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 
 namespace KinectRecorderAccord
@@ -59,6 +60,7 @@ namespace KinectRecorderAccord
         private bool bodySave = true;
         private bool skeletonSave = true;
 
+        private string folderPath = null;
 
         double fps;
 
@@ -165,8 +167,9 @@ namespace KinectRecorderAccord
         {
             if (isRecording)
             {
-                
+                this.recordBtn.IsEnabled = false;
                 this.recordBtn.Content = "Start Recording";
+                this.RecordingTextBlock.Text = "Recording Stoped";
                 this.isRecording = false;
 
                 this.StatusTextBlock.Text = string.Format("Saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}",
@@ -179,12 +182,8 @@ namespace KinectRecorderAccord
                 bodyIHandler.setRecordingState(false);
                 skeletonHandler.setRecordingState(false);
 
-                // writing can be done in one
+                // writing can be done in one for csv file
                 skeletonHandler.WriteAll();
-                // start writing file process
-                this.RecordingTextBlock.Text = "Recording Stoped";
-
-                this.recordBtn.IsEnabled = false;
             }
             else
             {
@@ -524,6 +523,16 @@ namespace KinectRecorderAccord
         private void SkeletonSaveCheck_Unchecked(object sender, RoutedEventArgs e)
         {
             skeletonSave = false;
+        }
+
+        private void FileBrowseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
+            if (folderBrowserDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                folderPath = folderBrowserDialog1.SelectedPath;
+            }
+            selectedFolderText.Text = folderPath;
         }
 
     }
