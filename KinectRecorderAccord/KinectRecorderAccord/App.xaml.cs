@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     /// <summary>
     /// Interaction logic for App.xaml

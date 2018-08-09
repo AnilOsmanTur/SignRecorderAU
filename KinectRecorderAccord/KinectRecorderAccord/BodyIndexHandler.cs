@@ -10,7 +10,7 @@ using Microsoft.Kinect;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     class BodyIndexHandler
     {

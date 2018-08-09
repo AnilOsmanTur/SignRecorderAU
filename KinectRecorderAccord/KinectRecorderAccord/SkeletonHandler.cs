@@ -9,8 +9,9 @@ using System.Windows.Media;
 using Microsoft.Kinect;
 using CsvHelper;
 using System.Collections;
+using System.Threading;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     class SkeletonHandler
     {
@@ -108,7 +109,7 @@ namespace KinectRecorderAccord
         // skeleton data array
         private double[] skeletonDataArray;
         private int stride = 7;
-        private Queue<SkeletonData> skeletonBuffer = new Queue<SkeletonData>();
+        private Queue<double[]> skeletonBuffer = new Queue<double[]>();
 
         private bool skeletonRecording = false;
         private String skeletonFilePath;
@@ -177,7 +178,6 @@ namespace KinectRecorderAccord
             // Create an image source that we can use in our image control
             this.imageSource = new DrawingImage(this.drawingGroup);
 
-            skeletonDataArray = new double[25*7];
         }
 
         public DrawingImage getImageSource()
@@ -222,6 +222,7 @@ namespace KinectRecorderAccord
                         if (body.IsTracked)
                         {
                             bodyCount++;
+                            skeletonDataArray = new double[25 * 7];
                             this.DrawClippedEdges(body, dc);
 
                             IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
@@ -257,14 +258,13 @@ namespace KinectRecorderAccord
                                     skeletonDataArray[i++] = depthSpacePoint.Y;
                                     skeletonDataArray[i++] = colorSpacePoint.X;
                                     skeletonDataArray[i++] = colorSpacePoint.Y;
-                                    System.Console.WriteLine(string.Format("array index {0}", i));
                                 }
                                 //System.Console.WriteLine(string.Format("body count {0}", bodyCount));
                             }
 
                             if (bodyCount == 1 && skeletonRecording)
                             {
-                                skeletonBuffer.Enqueue(new SkeletonData(frameCount, skeletonDataArray));
+                                skeletonBuffer.Enqueue(skeletonDataArray);
                                 frameCount++;
                             }
 
@@ -429,7 +429,8 @@ namespace KinectRecorderAccord
             freeWriters();
             stream = new StreamWriter(skeletonFilePath);
             csvWriter = new CsvWriter(stream);
-            
+            csvWriter.WriteHeader<SkeletonData>();
+            csvWriter.NextRecord();
         }
 
         private void freeWriters()
@@ -459,8 +460,22 @@ namespace KinectRecorderAccord
 
         public void WriteAll()
         {
-            IEnumerable<SkeletonData> records = skeletonBuffer.ToList<SkeletonData>();
-            csvWriter.WriteRecords<SkeletonData>(records);
+
+            Thread skeletonWriteThread = new Thread(new ThreadStart(Write));
+            skeletonWriteThread.Priority = ThreadPriority.BelowNormal;
+            skeletonWriteThread.Start();
+            
+        }
+
+        private void Write()
+        {
+
+            int count = skeletonBuffer.Count;
+            for (int i = 0; i < count; i++)
+            {
+                csvWriter.WriteRecord<SkeletonData>(new SkeletonData(i, skeletonBuffer.Dequeue()));
+                csvWriter.NextRecord();
+            }
             freeWriters();
         }
 

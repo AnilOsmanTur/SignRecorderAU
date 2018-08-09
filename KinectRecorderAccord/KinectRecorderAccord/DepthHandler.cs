@@ -10,7 +10,7 @@ using Microsoft.Kinect;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     class DepthHandler
     {
@@ -37,6 +37,7 @@ namespace KinectRecorderAccord
         public int Width, Height;
         
         private bool depthRecording = false;
+        public bool show;
 
         public DepthHandler(FrameDescription fd)
         {
@@ -51,6 +52,11 @@ namespace KinectRecorderAccord
             // to save to a video helper buffer
             depthPixelBuffer = new byte[Width * Height * 3];
    
+        }
+
+        public void SetShowState(bool state)
+        {
+            show = state;
         }
 
         public void Write()

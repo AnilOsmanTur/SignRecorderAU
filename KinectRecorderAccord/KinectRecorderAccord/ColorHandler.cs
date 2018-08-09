@@ -10,7 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     class ColorHandler
     {

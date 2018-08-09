@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KinectRecorderAccord
+namespace KinectRecorder
 {
     class SkeletonData
     {
         // to check the frame
-        public uint frameID { get; set; }
+        public int frameID { get; set; }
 
         // first 3 are camera space points
         //     Base of the spine.
@@ -289,7 +289,7 @@ namespace KinectRecorderAccord
 
         public SkeletonData() { }
 
-        public SkeletonData( uint id, double[] a)
+        public SkeletonData( int id, double[] a)
         {
             frameID = id;
             int i=0;
