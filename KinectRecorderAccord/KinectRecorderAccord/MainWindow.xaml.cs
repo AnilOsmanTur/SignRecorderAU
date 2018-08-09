@@ -34,7 +34,7 @@ namespace KinectRecorderAccord
         private DepthHandler depthHandler;
         private ColorHandler colorHandler;
         private BodyIndexHandler bodyIHandler;
-
+        private InfraredHandler infraredHandler;
         //kinect sensor
         private KinectSensor kinectSensor = null;
 
@@ -43,12 +43,14 @@ namespace KinectRecorderAccord
         private DepthFrameReader depthFrameReader = null;
         private BodyFrameReader bodyFrameReader = null;
         private BodyIndexFrameReader bodyIndexFrameReader = null;
+        private InfraredFrameReader infraredFrameReader = null;
 
         // writeable bitmaps
         private WriteableBitmap colorBitmap = null;
         private WriteableBitmap depthBitmap = null;
         private WriteableBitmap bodyIndexBitmap = null;
         private DrawingImage skeletalImage = null;
+        private WriteableBitmap infraredBitmap = null;
 
         private String SkeletalDataPath;
         
@@ -59,6 +61,7 @@ namespace KinectRecorderAccord
         private bool depthSave = true;
         private bool bodySave = true;
         private bool skeletonSave = true;
+        private bool infraredSave = true;
 
         private string folderPath = null;
 
@@ -76,6 +79,8 @@ namespace KinectRecorderAccord
             InitializeDepthStream();
             InitializeSkeletalStream();
             InitializeBodyIndexStream();
+            InitializeInfraredStream();
+
             this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
             this.kinectSensor.Open();
 
@@ -101,7 +106,12 @@ namespace KinectRecorderAccord
             depthHandler = new DepthHandler(this.kinectSensor.DepthFrameSource.FrameDescription);
             this.depthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
         }
-
+        public void InitializeInfraredStream()
+        {
+            this.infraredFrameReader = this.kinectSensor.InfraredFrameSource.OpenReader();
+            infraredHandler = new InfraredHandler(this.kinectSensor.InfraredFrameSource.FrameDescription);
+            this.infraredBitmap = new WriteableBitmap(infraredHandler.Width, infraredHandler.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
+        }
         public void InitializeSkeletalStream()
         {
             skeletonHandler = new SkeletonHandler(this.kinectSensor.DepthFrameSource.FrameDescription.Width,
@@ -141,8 +151,8 @@ namespace KinectRecorderAccord
         public ImageSource ImageSourceDepth
         {
             get
-            {
-                return this.depthBitmap;
+            {       
+                return this.infraredBitmap;
                 //return null;
             }
         }
@@ -151,7 +161,7 @@ namespace KinectRecorderAccord
             get
             {
                 return this.skeletalImage;
-                //return null;
+               // return null;
             }
         }
         public ImageSource ImageSourceBodyIndex
@@ -172,18 +182,20 @@ namespace KinectRecorderAccord
                 this.RecordingTextBlock.Text = "Recording Stoped";
                 this.isRecording = false;
 
-                this.StatusTextBlock.Text = string.Format("Saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}",
+                this.StatusTextBlock.Text = string.Format("Saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}\n    infrared: {4}",
                                                                 colorHandler.frameCount,
                                                                 depthHandler.frameCount,
                                                                 bodyIHandler.frameCount,
-                                                                skeletonHandler.frameCount);
+                                                                skeletonHandler.frameCount,
+                                                                infraredHandler.frameCount);
                 depthHandler.setRecordingState(false);
                 colorHandler.setRecordingState(false);
                 bodyIHandler.setRecordingState(false);
                 skeletonHandler.setRecordingState(false);
-
+                infraredHandler.setRecordingState(false);
                 // writing can be done in one for csv file
-                skeletonHandler.WriteAll();
+                
+                //skeletonHandler.WriteAll();
             }
             else
             {
@@ -195,7 +207,7 @@ namespace KinectRecorderAccord
                 
                 // this will fire up the adding data to lists
                
-                if (!colorSave && !depthSave && !bodySave && !skeletonSave)
+                if (!colorSave && !depthSave && !bodySave && !skeletonSave && !infraredSave)
                 {
                     this.RecordingTextBlock.Text = "No data checked. Nothing will be saved!";
                 }
@@ -215,7 +227,7 @@ namespace KinectRecorderAccord
             if (colorSave)
             {
                 colorHandler.setRecordingState(true);
-                colorHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testColor.avi", bitRate);
+                colorHandler.SetVideoPath("C:/Users/ASUS/Desktop/testColor.avi", bitRate);
                 Thread colorWriteThread = new Thread(new ThreadStart(colorHandler.Write));
                 colorWriteThread.Priority = ThreadPriority.BelowNormal;
                 colorWriteThread.Start();
@@ -228,7 +240,7 @@ namespace KinectRecorderAccord
             if (depthSave)
             {
                 depthHandler.setRecordingState(true);
-                depthHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testDepth.avi", bitRate);
+                depthHandler.SetVideoPath("C:/Users/ASUS/Desktop/testDepth.avi", bitRate);
                 Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
                 depthWriteThread.Priority = ThreadPriority.BelowNormal;
                 depthWriteThread.Start();
@@ -237,11 +249,22 @@ namespace KinectRecorderAccord
             {
                 depthHandler.setRecordingState(false);
             }
-
+            if (infraredSave)
+            {
+                infraredHandler.setRecordingState(true);
+                infraredHandler.SetVideoPath("C:/Users/ASUS/Desktop/testInfrared.avi", bitRate);
+                Thread infraredWriteThread = new Thread(new ThreadStart(infraredHandler.Write));
+                infraredWriteThread.Priority = ThreadPriority.BelowNormal;
+                infraredWriteThread.Start();
+            }
+            else
+            {
+                infraredHandler.setRecordingState(false);
+            }
             if (bodySave)
             {
                 bodyIHandler.setRecordingState(true);
-                bodyIHandler.SetVideoPath("C:/Users/AnılOsman/Desktop/testBody.avi", bitRate);
+                bodyIHandler.SetVideoPath("C:/Users/ASUS/Desktop/testBody.avi", bitRate);
                 Thread bodyWriteThread = new Thread(new ThreadStart(bodyIHandler.Write));
                 bodyWriteThread.Priority = ThreadPriority.BelowNormal;
                 bodyWriteThread.Start();
@@ -255,7 +278,7 @@ namespace KinectRecorderAccord
             if (skeletonSave)
             {
                 skeletonHandler.setRecordingState(true);
-                skeletonHandler.SetFilePath("C:/Users/AnılOsman/Desktop/testSkeleton.csv");
+                skeletonHandler.SetFilePath("C:/Users/ASUS/Desktop/testSkeleton.csv");
             }
             else
             {
@@ -281,8 +304,11 @@ namespace KinectRecorderAccord
             }
             if (this.bodyIndexFrameReader != null)
             {
-                Console.WriteLine("bodyIndex");
                 this.bodyIndexFrameReader.FrameArrived += this.Reader_BodyIndexFrameArrived;
+            }
+            if (this.infraredFrameReader != null)
+            {
+                this.infraredFrameReader.FrameArrived += this.Reader_InfraredFrameArrived;
             }
         }
 
@@ -300,6 +326,8 @@ namespace KinectRecorderAccord
                 this.depthFrameReader = null;
                 this.bodyIndexFrameReader.Dispose();
                 this.bodyIndexFrameReader = null;
+                this.infraredFrameReader.Dispose();
+                this.infraredFrameReader = null;
             }
 
             if (this.kinectSensor != null)
@@ -349,6 +377,18 @@ namespace KinectRecorderAccord
                 }
             }
         }
+        private void Reader_InfraredFrameArrived(object sender, InfraredFrameArrivedEventArgs e)
+        {
+            // InfraredFrame is IDisposable
+            using (InfraredFrame infraredFrame = e.FrameReference.AcquireFrame())
+            {
+                if (infraredFrame != null)
+                {
+                    infraredHandler.InfraredFrameArrival(infraredFrame, this.fps,  ref infraredBitmap);
+                }
+            }
+        }
+        
         private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
         {
             // ColorFrame is IDisposable
@@ -366,11 +406,12 @@ namespace KinectRecorderAccord
                     colorHandler.ColorFrameArrival(colorFrame, ref colorBitmap, fps);
 
                     colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-                    RecordingTextBlock.Text = string.Format("Recording: saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}",
+                    RecordingTextBlock.Text = string.Format("Recording: saved frame counts\n color: {0}    depth: {1}\n body: {2}    skeleton: {3}\n    infrared: {4}",
                                                                 colorHandler.frameCount,
                                                                 depthHandler.frameCount,
                                                                 bodyIHandler.frameCount,
-                                                                skeletonHandler.frameCount);
+                                                                skeletonHandler.frameCount,
+                                                                infraredHandler.frameCount);
                     
                 }
             }
@@ -525,6 +566,14 @@ namespace KinectRecorderAccord
             skeletonSave = false;
         }
 
+        private void InfraredSaveCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            infraredSave = true;
+        }
+        private void InfraredSaveCheck_UnChecked(object sender, RoutedEventArgs e)
+        {
+            infraredSave = false;
+        }
         private void FileBrowseBtn_Click(object sender, RoutedEventArgs e)
         {
             FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
@@ -535,5 +584,6 @@ namespace KinectRecorderAccord
             selectedFolderText.Text = folderPath;
         }
 
+      
     }
 }

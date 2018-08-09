@@ -42,14 +42,15 @@
 
         <Button Grid.Row="3" Content="Screenshot" Height="32" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,264,10,10" Click="ScreenshotButton_Click" Grid.Column="2" Width="114" />
 
-        <TextBlock x:Name="StatusTextBlock"  Grid.Column="2" HorizontalAlignment="Left" Margin="10,177,0,0" Grid.Row="3" TextWrapping="Wrap" Text="Status" VerticalAlignment="Top" Height="55" Width="318"/>
+        <TextBlock x:Name="StatusTextBlock"  Grid.Column="2" HorizontalAlignment="Left" Margin="11.2,192,0,0" Grid.Row="3" TextWrapping="Wrap" Text="Status" VerticalAlignment="Top" Height="68" Width="318"/>
         <Button x:Name="recordBtn" Content="Start Recording" IsEnabled="False" Click="recordBtn_Click" Grid.Column="2" HorizontalAlignment="Left" Margin="209,80,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" Height="27"/>
         <TextBlock x:Name="RecordingTextBlock" Grid.Column="2" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="3" TextWrapping="Wrap" Text="not Recording" VerticalAlignment="Top" Height="65" Width="318"/>
         <CheckBox x:Name="ColorSaveCheck" Content="color" Grid.Column="2" HorizontalAlignment="Left" Height="15" Margin="209,112,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" IsChecked="True" Checked="ColorSaveCheck_Checked" Unchecked="ColorSaveCheck_Unchecked"/>
         <CheckBox x:Name="DepthSaveCheck" Content="depth" Grid.Column="2" HorizontalAlignment="Left" Height="15" Margin="209,127,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" IsChecked="True" Checked="DepthSaveCheck_Checked" Unchecked="DepthSaveCheck_Unchecked"/>
         <CheckBox x:Name="BodySaveCheck" Content="body index" Grid.Column="2" HorizontalAlignment="Left" Height="15" Margin="209,142,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" IsChecked="True" Checked="BodySaveCheck_Checked" Unchecked="BodySaveCheck_Unchecked"/>
-        <CheckBox x:Name="SkeletonSaveCheck" Content="skeleton" Grid.Column="2" HorizontalAlignment="Left" Height="15" Margin="209,157,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" IsChecked="True" Checked="SkeletonSaveCheck_Checked" Unchecked="SkeletonSaveCheck_Unchecked"/>
+        <CheckBox x:Name="SkeletonSaveCheck" Content="skeleton" Grid.Column="2" HorizontalAlignment="Left" Height="15" Margin="209.2,157,0,0" Grid.Row="3" VerticalAlignment="Top" Width="119" IsChecked="True" Checked="SkeletonSaveCheck_Checked" Unchecked="SkeletonSaveCheck_Unchecked"/>
         <Button x:Name="FileBrowseBtn" Content="Browse" Grid.Column="2" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Click="FileBrowseBtn_Click"/>
         <TextBlock x:Name="selectedFolderText" Grid.Column="2" HorizontalAlignment="Left" Margin="90,10,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Browse and select folder location" VerticalAlignment="Top" RenderTransformOrigin="-0.98,0.5" Height="20" Width="238"/>
+        <CheckBox x:Name="InfraredSaveCheck" Content="infrared" Grid.Column="2" Height="15" Margin="209.2,172,10.2,0" Grid.Row="3" VerticalAlignment="Top" Checked="InfraredSaveCheck_Checked" Unchecked="InfraredSaveCheck_UnChecked" IsChecked="True"/>
     </Grid>
 </Window>
