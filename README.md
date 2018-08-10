@@ -24,7 +24,7 @@ Video Recorder Software for Turkish Sign Language (TSL) with Kinect v2.
     - Kinect v2 SDK documentaion: [link](https://docs.microsoft.com/en-us/previous-versions/windows/kinect/dn799271(v%3dieb.10))
 
 	
-# Alpha Version Screenshots
+## Alpha Version Screenshots
 1. Depth frame open
 	![Screen with depth frame](/Screenshots/SignRecorderAU_withDepth.png)
 2. Infrared frame open
