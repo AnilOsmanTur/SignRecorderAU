@@ -19,13 +19,17 @@ namespace KinectRecorder
     {
         private const float InfraredSourceValueMaximum = (float)ushort.MaxValue;
 
-        private const float InfraredSourceScale = 0.75f;
+        //private const float InfraredSourceScale = 0.75f;
 
-        private const int InfraredOutputValueMinimum = 0;
+        private const float InfraredOutputValueMinimum = 0.01f;
 
-        private const int InfraredOutputValueMaximum = 256;
+        private const float InfraredOutputValueMaximum = 1.0f;
 
-        private double MapInfraredToByte = (InfraredOutputValueMaximum - InfraredOutputValueMinimum )/ 256;
+        private const float InfraredSceneValueAverage = 0.08f;
+
+        private const float InfraredSceneSD = 3.0f; // STD standart deviation
+
+        private double MapInfraredToByte = (InfraredOutputValueMaximum - InfraredOutputValueMinimum) / 256;
 
         public FrameDescription infraredFrameDescription = null;
 
@@ -119,7 +123,7 @@ namespace KinectRecorder
                     (this.infraredFrameDescription.Width == infraredBitmap.PixelWidth) && (this.infraredFrameDescription.Height == infraredBitmap.PixelHeight))
                 {
                     ProcessInfraredFrameData(infraredBuffer.UnderlyingBuffer, infraredBuffer.Size);
-                    
+
                     processed = true;
                     if (infraredRecording)
                     {
@@ -164,21 +168,26 @@ namespace KinectRecorder
             ushort* frameData = (ushort*)infraredFrameData;
 
             // process the infrared data
+            int pixelIndex = 0;
             for (int i = 0; i < (int)(infraredFrameDataSize / this.infraredFrameDescription.BytesPerPixel); ++i)
             {
                 // since we are displaying the image as a normalized grey scale image, we need to convert from
                 // the ushort data (as provided by the InfraredFrame) to a value from [InfraredOutputValueMinimum, InfraredOutputValueMaximum]
                 //backBuffer[i] = Math.Min(InfraredOutputValueMaximum, (((float)frameData[i] / InfraredSourceValueMaximum * InfraredSourceScale) * (1.0f - InfraredOutputValueMinimum)) + InfraredOutputValueMinimum);
                 ushort ir = frameData[i];
-                float intensity = Math.Min(InfraredOutputValueMaximum, (((float)frameData[i] / InfraredSourceValueMaximum * InfraredSourceScale) * (InfraredOutputValueMaximum - InfraredOutputValueMinimum)) + InfraredOutputValueMinimum);
+                float intensityRatio = (float)frameData[i] / InfraredSourceValueMaximum;
+                intensityRatio /= InfraredSceneValueAverage * InfraredSceneSD;
+                intensityRatio = Math.Min(InfraredOutputValueMaximum, intensityRatio);
+                intensityRatio = Math.Max(InfraredOutputValueMinimum, intensityRatio);
 
-                infraredPixels[i * 4] = (byte)intensity; // Red
-                infraredPixels[i * 4 + 1] = (byte)intensity; // Green   
-                infraredPixels[i * 4 + 2] = (byte)intensity; // Blue
-
+                byte intensity = (byte)(intensityRatio * 255.0f);
+                infraredPixels[pixelIndex++] = intensity; // Red
+                infraredPixels[pixelIndex++] = intensity; // Green   
+                infraredPixels[pixelIndex++] = intensity; // Blue
+                infraredPixels[pixelIndex++] = 255; // alpha
             }
 
-            
+
         }
     }
 }
