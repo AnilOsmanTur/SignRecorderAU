@@ -163,7 +163,7 @@ namespace KinectRecorder
 
         private unsafe void ProcessDepthFrameData(IntPtr depthFrameData, uint depthFrameDataSize, ushort minDepth, ushort maxDepth)
         {
-            this.MapDepthToByte = (maxDepth - minDepth) / 256.0;
+            this.MapDepthToByte = (maxDepth - minDepth) / 255.0;
             //System.Console.WriteLine(MapDepthToByte);
 
             // depth frame data is a 16 bit value
