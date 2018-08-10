@@ -125,7 +125,7 @@ namespace KinectRecorder
                 {
                     bBitmap = UtilityClass.ByteArrayToBitmap(bodyPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
                     bodyBitmapBuffer.Enqueue(bBitmap);
-                    System.GC.Collect();
+                    //System.GC.Collect();
                     frameCount++;
                     if (fps < 16.0)
                     {

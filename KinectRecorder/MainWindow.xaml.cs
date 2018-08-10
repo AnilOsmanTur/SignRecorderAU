@@ -51,10 +51,8 @@ namespace KinectRecorder
 
         // writeable bitmaps
         private WriteableBitmap colorBitmap = null;
-//        private WriteableBitmap depthBitmap = null;
         private WriteableBitmap bodyIndexBitmap = null;
         private DrawingImage skeletalImage = null;
-//        private WriteableBitmap indraredBitmap = null;
         private WriteableBitmap infraredDepthBitmap = null;
 
 
@@ -70,9 +68,7 @@ namespace KinectRecorder
         double fps;
 
         private bool showInfrared = false;
-
-        //private StreamReader streamUsers;
-        //private StreamReader streamWords;
+        
         private string fileBasePath;
         private string folderPath = null;
         private int repeatNumber = 0;
@@ -259,8 +255,7 @@ namespace KinectRecorder
 
         public void recordBtn_Click(Object sender, RoutedEventArgs e)
         {
-            CreatePaths();
-
+            
             if (isRecording)
             {
                 this.recordBtn.IsEnabled = false;
@@ -286,7 +281,9 @@ namespace KinectRecorder
             else
             {
                 this.isRecording = true;
-                
+
+                CreatePaths();
+
                 writerHelper();
                 
                 this.recordBtn.Content = "Stop Recording";
@@ -431,13 +428,16 @@ namespace KinectRecorder
                     colorHandler.ColorFrameArrival(colorFrame, ref colorBitmap, fps);
 
                     colorResolutionText.Content = string.Format("Resolution :  {0} x {1}", width.ToString(), height.ToString());
-                    RecordingTextBlock.Text = string.Format("Recording: saved frame counts\n color: {0}    depth: {1}    body: {2}\n skeleton: {3}    infrared: {4}",
+                    if (isRecording)
+                    {
+                        RecordingTextBlock.Text = string.Format("Recording: saved frame counts\n color: {0}    depth: {1}    body: {2}\n skeleton: {3}    infrared: {4}",
                                                                 colorHandler.frameCount,
                                                                 depthHandler.frameCount,
                                                                 bodyIHandler.frameCount,
                                                                 skeletonHandler.frameCount,
                                                                 infraredHandler.frameCount);
-                    
+                    }
+
                 }
             }
         }

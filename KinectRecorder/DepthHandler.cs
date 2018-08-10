@@ -39,6 +39,8 @@ namespace KinectRecorder
         private bool depthRecording = false;
         public bool show;
 
+        private int garbageCount = 0;
+
         public DepthHandler(FrameDescription fd)
         {
 
@@ -134,17 +136,23 @@ namespace KinectRecorder
                     // depthFrame.CopyFrameDataToArray(this.depthPixelBuffer); done in processing function
                     if (depthRecording)
                     {
-
+                        garbageCount++;
                         this.dBitmap = UtilityClass.ByteArrayToBitmap(this.depthPixelBuffer, Width, Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
                         this.depthBitmapBuffer.Enqueue(this.dBitmap);
-                        System.GC.Collect();
                         this.frameCount++;
                         if (fps < 16.0)
                         {
+                            garbageCount++;
                             Console.WriteLine("fps drop yaşandı");
                             this.depthBitmapBuffer.Enqueue(this.dBitmap);
                             this.frameCount++;
                         }
+                        if(garbageCount > 200)
+                        {
+                            System.GC.Collect();
+                            garbageCount = 0;
+                        }
+                        
                     }
 
                 }

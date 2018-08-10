@@ -33,6 +33,7 @@ namespace KinectRecorder
         public int Width, Height;
 
         private bool colorRecording = false;
+        private int garbageCount = 0;
 
         //private readonly object _lock;
 
@@ -117,14 +118,22 @@ namespace KinectRecorder
                     {
                         cBitmap = UtilityClass.ByteArrayToBitmap(colorPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                         colorBitmapBuffer.Enqueue(cBitmap);
-                        System.GC.Collect();
                         frameCount++;
+                        //garbageCount++;
                         if (fps < 16.0)
                         {
                             Console.WriteLine("fps droped");
                             colorBitmapBuffer.Enqueue(cBitmap);
                             frameCount++;
+                            //garbageCount++;
                         }
+                        /*
+                        if (garbageCount > 100)
+                        {
+                            System.GC.Collect();
+                            garbageCount = 0;
+                        }
+                        */
                     }
                 }
             }

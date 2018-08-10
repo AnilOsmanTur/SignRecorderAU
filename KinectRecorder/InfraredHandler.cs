@@ -125,7 +125,7 @@ namespace KinectRecorder
                     {
                         this.iBitmap = IRFrameToBitmap(df);
                         this.infraredBitmapBuffer.Enqueue(this.iBitmap);
-                        System.GC.Collect();
+                        //System.GC.Collect();
                         this.frameCount++;
                         if (fps < 16.0)
                         {
