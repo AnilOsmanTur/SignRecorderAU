@@ -1,0 +1,11 @@
+﻿<Window x:Class="KinectRecorder.AddWord"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AddWord" Height="111.654" Width="298.872">
+    <Grid>
+        <Button x:Name="okBtn" Content="OK" HorizontalAlignment="Left" Margin="206,51,0,0" VerticalAlignment="Top" Width="75" FontWeight="Bold" Click="okBtn_Click"/>
+        <TextBox x:Name="WordNameBox" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" TextWrapping="Wrap" Text="pota" VerticalAlignment="Top" Width="194" FontSize="14"/>
+        <Label Content="Word" HorizontalAlignment="Left" Margin="209,10,0,0" VerticalAlignment="Top" Width="75" FontSize="14" Height="26" FontWeight="Bold"/>
+
+    </Grid>
+</Window>

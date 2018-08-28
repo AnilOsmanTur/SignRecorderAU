@@ -1,0 +1,11 @@
+﻿<Window x:Class="KinectRecorder.AddUser"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AddUser" Height="113.91" Width="302.256">
+    <Grid>
+        <Button x:Name="okBtn" Content="OK" HorizontalAlignment="Left" Margin="209,53,0,0" VerticalAlignment="Top" Width="75" FontWeight="Bold" Click="okBtn_Click"/>
+        <TextBox x:Name="NameBox" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" TextWrapping="Wrap" Text="Meymet" VerticalAlignment="Top" Width="194" FontSize="14"/>
+        <Label Content="Name" HorizontalAlignment="Left" Margin="209,10,0,0" VerticalAlignment="Top" Width="75" FontSize="14" Height="26" FontWeight="Bold"/>
+
+    </Grid>
+</Window>

@@ -86,6 +86,12 @@ namespace KinectRecorder
         private CsvWriter headerWriter;
         //private HeaderUnit headerUnit;
 
+        private StreamWriter streamWord;
+        private CsvWriter wordWriter;
+
+        private StreamWriter streamUser;
+        private CsvWriter userWriter;
+
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
         /// </summary>
@@ -215,6 +221,15 @@ namespace KinectRecorder
             {
                 headerWriter.Dispose();
                 streamHeader.Dispose();
+            }
+
+            if(userWriter != null)
+            {
+                streamWord.Dispose();
+                streamUser.Dispose();
+                
+                wordWriter.Dispose();
+                userWriter.Dispose();
             }
             
         }
@@ -624,12 +639,51 @@ namespace KinectRecorder
                 openHeader();
                 readFile();
                 fillCombos();
+                openCsvWriters();
+
+                addUserBtn.IsEnabled = true;
+                addWordBtn.IsEnabled = true;
             }
             else
             {
                 selectedFolderText.Text = "Please! Select a directory. Please!!";
             }
             
+        }
+
+        private void openCsvWriters()
+        {
+
+            if (File.Exists(folderPath + "/sign_app_words.csv"))
+            {
+                streamWord = new StreamWriter(folderPath + "/sign_app_words.csv", true);
+                wordWriter = new CsvWriter(streamWord);
+            }
+            else
+            {
+                streamWord = new StreamWriter(folderPath +"/sign_app_words.csv");
+                wordWriter = new CsvWriter(streamWord);
+
+                wordWriter.WriteHeader<HeaderUnit>();
+                wordWriter.NextRecordAsync();
+                streamWord.FlushAsync();
+            }
+
+            if (File.Exists(folderPath + "/sign_app_users.csv"))
+            {
+                streamUser = new StreamWriter(folderPath + "/sign_app_users.csv", true);
+                userWriter = new CsvWriter(streamUser);
+            }
+            else
+            {
+                streamUser = new StreamWriter(folderPath + "/sign_app_users.csv");
+                userWriter = new CsvWriter(streamUser);
+
+                userWriter.WriteHeader<User>();
+                userWriter.NextRecordAsync();
+                streamUser.FlushAsync();
+            }
+
         }
 
         private void repeatNumberText_TextChanged(object sender, TextChangedEventArgs e)
@@ -674,20 +728,25 @@ namespace KinectRecorder
 
         private void readFile()
         {
-            var streamUsers = new StreamReader(folderPath+"/sign_app_users.csv");
-            var readerUsers = new CsvReader(streamUsers);
+            StreamReader streamUsers = new StreamReader(folderPath + "/sign_app_users.csv");
+            CsvReader readerUsers = new CsvReader(streamUsers);
 
-            var streamWords = new StreamReader(folderPath+"/sign_app_words.csv");
-            var readerWords = new CsvReader(streamWords);
+            StreamReader streamWords = new StreamReader(folderPath + "/sign_app_words.csv");
+            CsvReader readerWords = new CsvReader(streamWords);
 
             users = readerUsers.GetRecords<User>().ToList<User>();
             words = readerWords.GetRecords<Word>().ToList<Word>();
 
-            
+            readerUsers.Dispose();
+            streamUsers.Dispose();
+
+            readerWords.Dispose();
+            streamWords.Dispose();
         }
 
         private void fillCombos()
         {
+
             foreach(User user in users)
             {
                 userCombo.Items.Add(user.userName);
@@ -731,7 +790,7 @@ namespace KinectRecorder
             }
             else
             {
-                basePath = folderPath + "\\" + selectedWord.id.ToString() + "\\Sample";
+                basePath = folderPath + "\\" + selectedWord.id.ToString() + "\\Samples";
             }
 
             fileBasePath = basePath + "\\" + selectedUser.id.ToString() + "_" + repeatNumber + "_" + timeStamp;
@@ -805,12 +864,64 @@ namespace KinectRecorder
 
         private void addWordBtn_Click(object sender, RoutedEventArgs e)
         {
+            AddWord dlg = new AddWord();
+            dlg.Owner = this;
+
+            dlg.ShowDialog();
+
+            // Process data entered by user if dialog box is accepted
+            if (dlg.DialogResult == true)
+            {
+
+                if (users.Count > 0)
+                {
+                    Word word = words[words.Count - 1];
+                    word.id = word.id + 1;
+                    word.word = dlg.wordName;
+
+                    words.Add(word);
+                    
+                    // combo box append
+                    wordCombo.Items.Add(word.word);
+
+                    wordWriter.WriteRecord<Word>(word);
+                    wordWriter.NextRecordAsync();
+                    streamWord.FlushAsync();
+                }
+
+            }
 
         }
 
         private void addUserBtn_Click(object sender, RoutedEventArgs e)
         {
 
+            AddUser dlg = new AddUser();
+            dlg.Owner = this;
+
+            dlg.ShowDialog();
+
+            // Process data entered by user if dialog box is accepted
+            if (dlg.DialogResult == true)
+            {
+
+                if (users.Count > 0)
+                {
+                    User user = users[users.Count - 1];
+                    user.id = user.id + 1;
+                    user.userName = dlg.userName;
+
+                    users.Add(user);
+
+                    // combo box append
+                    userCombo.Items.Add(user.userName);
+
+                    userWriter.WriteRecord<User>(user);
+                    userWriter.NextRecordAsync();
+                    streamUser.FlushAsync();
+                }
+
+            }
         }
 
         
