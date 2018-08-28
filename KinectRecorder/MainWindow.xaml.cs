@@ -90,29 +90,31 @@ namespace KinectRecorder
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
+        private bool previewToRecord = true;
         
 
         public MainWindow()
         {
 
             // kinect init
-            this.kinectSensor = KinectSensor.GetDefault();
+            InitKinect();
 
+            this.DataContext = this; 
+            this.InitializeComponent();
+
+        }
+        private void InitKinect()
+        {
+            this.kinectSensor = KinectSensor.GetDefault();
+            this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
+            this.kinectSensor.Open();
             InitializeColorStream();
             InitializeDepthStream();
             InitializeSkeletalStream();
             InitializeBodyIndexStream();
             InitializeInfraredStream();
-
-            this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
-            this.kinectSensor.Open();
-
-            this.DataContext = this; 
-            this.InitializeComponent();
-            this.Loaded += new RoutedEventHandler(MainWindow_Loaded);
-
+            this.KinectFrameArrivalBindings();
         }
-
         // initialize color stream
         public void InitializeColorStream()
         {            
@@ -158,10 +160,8 @@ namespace KinectRecorder
             infraredHandler.SetShowState(false);
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void KinectFrameArrivalBindings()
         {
-            Console.WriteLine("loaded");
-
             if (this.colorFrameReader != null)
             {
                 this.colorFrameReader.FrameArrived += this.Reader_ColorFrameArrived;
@@ -184,9 +184,8 @@ namespace KinectRecorder
             }
         }
 
-        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        private void KinectClose()
         {
-            Console.WriteLine("Ciao!");
             if (this.colorFrameReader != null)
             {
                 // ColorFrameReder is IDisposable
@@ -207,6 +206,11 @@ namespace KinectRecorder
                 this.kinectSensor.Close();
                 this.kinectSensor = null;
             }
+        }
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            Console.WriteLine("Ciao!");
+            KinectClose();
             if(headerWriter != null)
             {
                 headerWriter.Dispose();
@@ -258,6 +262,8 @@ namespace KinectRecorder
             
             if (isRecording)
             {
+                previewBtn.IsEnabled = true;
+
                 this.recordBtn.IsEnabled = false;
                 this.recordBtn.Content = "Start Recording";
                 this.RecordingTextBlock.Text = "Recording Stoped";
@@ -280,6 +286,8 @@ namespace KinectRecorder
             }
             else
             {
+                previewBtn.IsEnabled = false;
+
                 this.isRecording = true;
 
                 CreatePaths();
@@ -776,6 +784,33 @@ namespace KinectRecorder
                 depthHandler.SetShowState(false);
                 infraredHandler.SetShowState(true);
             }
+        }
+
+        private void previewBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (previewToRecord)
+            {
+                previewToRecord = false;
+                previewBtn.Content = "record";
+                this.kinectSensor.Close();
+            }
+            else
+            {
+                previewBtn.Content = "preview";
+                previewToRecord = true;
+                this.kinectSensor.Open();
+            }
+            
+        }
+
+        private void addWordBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void addUserBtn_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         

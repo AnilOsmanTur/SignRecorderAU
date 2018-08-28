@@ -61,6 +61,9 @@
         <CheckBox x:Name="TutorialCheck" Content="Tutorial" Grid.Column="2" HorizontalAlignment="Left" Margin="14,178,0,0" Grid.Row="1" VerticalAlignment="Top" Width="162" Checked="TutorialCheck_Checked" Unchecked="TutorialCheck_Unchecked"/>
 
         <Button x:Name="depthInfraSwitch" Content="Depth" Grid.Column="1" HorizontalAlignment="Left" Margin="152,1,0,0" VerticalAlignment="Top" Width="119" Height="25" Click="depthInfraSwitch_Click" Grid.RowSpan="2" FontSize="16"/>
+        <Button x:Name="previewBtn" Content="Preview" IsEnabled="False" Grid.Column="2" HorizontalAlignment="Left" Margin="10.2,219.2,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Height="24" Click="previewBtn_Click"/>
+        <Button x:Name="addUserBtn" Content="Add" IsEnabled="False" Grid.Column="2" HorizontalAlignment="Left" Margin="254.2,54.2,0,0" Grid.Row="1" VerticalAlignment="Top" Width="74" Height="26" Click="addUserBtn_Click"/>
+        <Button x:Name="addWordBtn" Content="Add" IsEnabled="False" Grid.Column="2" HorizontalAlignment="Left" Margin="254.2,94.2,0,0" Grid.Row="1" VerticalAlignment="Top" Width="74" Height="26" Click="addWordBtn_Click"/>
 
     </Grid>
 </Window>
