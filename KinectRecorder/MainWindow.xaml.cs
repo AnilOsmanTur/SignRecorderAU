@@ -846,20 +846,12 @@ namespace KinectRecorder
         }
 
         private void previewBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (previewToRecord)
-            {
-                previewToRecord = false;
-                previewBtn.Content = "record";
-                this.kinectSensor.Close();
-            }
-            else
-            {
-                previewBtn.Content = "preview";
-                previewToRecord = true;
-                this.kinectSensor.Open();
-            }
-            
+        { 
+            this.kinectSensor.Close();
+            PreviewWindow pw = new PreviewWindow();
+            pw.Owner = this;
+            pw.ShowDialog();
+            this.kinectSensor.Open();
         }
 
         private void addWordBtn_Click(object sender, RoutedEventArgs e)
