@@ -125,7 +125,8 @@ namespace KinectRecorder
         public void InitializeColorStream()
         {            
             this.colorFrameReader = this.kinectSensor.ColorFrameSource.OpenReader();
-            colorHandler = new ColorHandler(this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra)); //, _lock);
+            colorHandler = ColorHandler.Instance;
+            colorHandler.ColorHandlerSet(this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra)); //, _lock);
             this.colorBitmap = new WriteableBitmap(colorHandler.Width, colorHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
         }
 
@@ -846,7 +847,7 @@ namespace KinectRecorder
         }
 
         private void previewBtn_Click(object sender, RoutedEventArgs e)
-        { 
+        {
             this.kinectSensor.Close();
             PreviewWindow pw = new PreviewWindow();
             pw.Owner = this;

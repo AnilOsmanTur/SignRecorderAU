@@ -9,23 +9,27 @@ using Microsoft.Kinect;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Media;
 
 namespace KinectRecorder
 {
-    class ColorHandler
+    public class ColorHandler
     {
         private Bitmap cBitmap;
 
+        static ColorHandler instance = new ColorHandler();
         // writer buffer
         private Queue<System.Drawing.Bitmap> colorBitmapBuffer = new Queue<System.Drawing.Bitmap>();
         byte[] colorPixelBuffer;
 
         // writer class
         private String colorVideoPath;
-        private VideoFileWriter colorWriter;
+        private VideoFileWriter colorWriter = new VideoFileWriter();
+        private VideoFileReader colorReader = new VideoFileReader();
         private int bitRate = 1200000;
 
         public UInt32 frameCount = 0;
+        public long readerFrameCount = 0;
 
         // FrameDescriptor
         private FrameDescription colorFrameDescription = null;
@@ -37,7 +41,11 @@ namespace KinectRecorder
 
         //private readonly object _lock;
 
-        public ColorHandler(FrameDescription fd)//, object l)
+        public static ColorHandler Instance{
+                get {return instance;}
+        }
+
+        public void ColorHandlerSet(FrameDescription fd)//, object l)
         {
             //_lock = l;
 
@@ -48,6 +56,23 @@ namespace KinectRecorder
             colorPixelBuffer = new byte[Width * Height * 4];
 
 
+        }
+
+        public void openReader()
+        {
+            colorReader.Open(colorVideoPath);
+            readerFrameCount = colorReader.FrameCount;
+        }
+
+        public void closeReader()
+        {
+            colorReader.Close();
+            readerFrameCount = 0;
+        }
+
+        public ImageSource Read()
+        {
+            return UtilityClass.BitmapToImageSource(colorReader.ReadVideoFrame());
         }
 
         public void Write()
@@ -80,7 +105,6 @@ namespace KinectRecorder
         public void openVideoWriter()
         {
             Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            colorWriter = new VideoFileWriter();
             colorWriter.Open(colorVideoPath, Width, Height, rationalFrameRate, VideoCodec.MPEG4, bitRate);
             frameCount = 0;
         }
