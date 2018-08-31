@@ -53,6 +53,7 @@ namespace KinectRecorder
         }
 
         public byte[] depthPreviewPixels;
+
         public void DepthHandlerSet(FrameDescription fd)
         {
             depthFrameDescription = fd;
@@ -60,12 +61,12 @@ namespace KinectRecorder
             Height = fd.Height;
 
             // to show on screen
-            depthPixels = new byte[Width * Height * 4];
+            depthPixels = new byte[Width * Height * 2];
             
             // to save to a video helper buffer
             depthPixelBuffer = new byte[Width * Height * 3];
 
-            depthPreviewPixels = new byte[Width * Height*2];
+            depthPreviewPixels = new byte[Width * Height * 2];
         }
 
         public void SetShowState(bool state)
@@ -88,8 +89,7 @@ namespace KinectRecorder
         public void Read(ref WriteableBitmap depthPreview)
         {
             Bitmap img = depthReader.ReadVideoFrame();
-            
-            int depth = 0;
+
             int k = 0;
             for (int i = 0; i < img.Height; i++)
             {
@@ -97,11 +97,10 @@ namespace KinectRecorder
                 {
                     
                     System.Drawing.Color c = img.GetPixel(j, i);
-                    depth = c.R * 1000 + c.G * 100 + c.B;
-
+                    
                     //depth = (int)((float) depth / 4000 * ushort.MaxValue);
-                    this.depthPreviewPixels[k++] = (byte)(depth >> 8);
-                    this.depthPreviewPixels[k++] = (byte)(depth);
+                    this.depthPreviewPixels[k++] = (byte)c.R;
+                    this.depthPreviewPixels[k++] = (byte)c.G;
                     
                 }
                 
@@ -222,37 +221,31 @@ namespace KinectRecorder
             ushort* frameData = (ushort*)depthFrameData;
 
             // convert depth to a visual representation
-            int stride = 0, strideWrite = 0, j, k;
+            int stride = 2, strideWrite = 3, j, k;
             for (int i = 0; i < (int)(depthFrameDataSize / this.depthFrameDescription.BytesPerPixel); ++i)
             {
                 // Get the depth for this pixel
                 ushort depth = frameData[i];
-                j = stride + i;
-                k = strideWrite + i;
+                j = stride * i;
+                k = strideWrite * i;
                 // To convert to a byte, we're mapping the depth value to the byte range.
                 // Values outside the reliable depth range are mapped to 0 (black).
                 if (depth >= minDepth && depth <= maxDepth)
                 {
-                    this.depthPixels[j] = (byte)(depth / MapDepthToByte);
-                    this.depthPixels[j + 1] = (byte)(depth / MapDepthToByte);
-                    this.depthPixels[j + 2] = (byte)(depth / MapDepthToByte);
+                    ushort depthShow = (ushort)((depth / (float)4000) * (ushort.MaxValue-1));
+                    this.depthPixels[j] = (byte)(depthShow);
+                    this.depthPixels[j + 1] = (byte)(depthShow >> 8);
 
-                    this.depthPixelBuffer[k] = (byte)(frameData[i] / 1000);
-                    this.depthPixelBuffer[k+1] = (byte)((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k+2] = (byte)(frameData[i] % 100);
+                    this.depthPixelBuffer[k] = (byte)(depth);
+                    this.depthPixelBuffer[k + 1] = (byte)(depth >> 8); 
+                    this.depthPixelBuffer[k + 2] = (byte)(0);
 
-                    //this.depthPixelBuffer[k] = (byte)(depth << 8);
-                    //this.depthPixelBuffer[k+1] = (byte)(depth << 8);
-                    //this.depthPixelBuffer[k+2] = (byte)(0);
-
-                    //k+3
 
                 }
                 else if (depth < minDepth)
                 {
-                    this.depthPixels[j] = (byte)160;
+                    this.depthPixels[j] = (byte)0;
                     this.depthPixels[j + 1] = (byte)0;
-                    this.depthPixels[j + 2] = (byte)0;
 
                     this.depthPixelBuffer[k] = (byte)0; //(frameData[i] / 1000);
                     this.depthPixelBuffer[k+1] = (byte)0; //((frameData[i] % 1000) / 100);
@@ -260,16 +253,13 @@ namespace KinectRecorder
                 }
                 else
                 {
-                    this.depthPixels[j] = (byte)0;
-                    this.depthPixels[j + 1] = (byte)0;
-                    this.depthPixels[j + 2] = (byte)160;
+                    this.depthPixels[j] = (byte)255;
+                    this.depthPixels[j + 1] = (byte)255;
 
-                    this.depthPixelBuffer[k] = (byte)0; //(frameData[i] / 1000);
-                    this.depthPixelBuffer[k+1] = (byte)0; //((frameData[i] % 1000) / 100);
+                    this.depthPixelBuffer[k] = (byte)255; //(frameData[i] / 1000);
+                    this.depthPixelBuffer[k+1] = (byte)255; //((frameData[i] % 1000) / 100);
                     this.depthPixelBuffer[k+2] = (byte)0; //(frameData[i] % 100);
                 }
-                stride += 3;
-                strideWrite += 2;
             }
         }
 

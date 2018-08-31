@@ -9,6 +9,7 @@ using System.Drawing;
 using Microsoft.Kinect;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Media;
 
 namespace KinectRecorder
 {
@@ -16,9 +17,10 @@ namespace KinectRecorder
     {
         //Bodyindex variables
         private Bitmap bBitmap;
-
+        static BodyIndexHandler instance = new BodyIndexHandler();
         /// Size of the RGB pixel in the bitmap
         private const int BytesPerPixel = 4;
+        public long readerFrameCount = 0;
         /// Collection of colors to be used to display the BodyIndexFrame data.
         private static readonly uint[] BodyColor =
         {
@@ -38,7 +40,8 @@ namespace KinectRecorder
         public byte[] bodyPixelBuffer;
 
         private String BodyIndexPath;
-        private VideoFileWriter bodyWriter;
+        private VideoFileWriter bodyWriter = new VideoFileWriter();
+        private VideoFileReader bodyReader = new VideoFileReader();
         private int bitRate = 1200000;
 
         public UInt32 frameCount = 0;
@@ -47,8 +50,11 @@ namespace KinectRecorder
 
         private bool bodyRecording = false;
 
-
-        public BodyIndexHandler(FrameDescription fd)
+        public static BodyIndexHandler Instance
+        {
+            get { return instance; }
+        }
+        public void BodyIndexHandlerSet(FrameDescription fd)
         {
             bodyIndexFrameDescription = fd;
             Width = fd.Width;
@@ -60,6 +66,17 @@ namespace KinectRecorder
             bodyPixelBuffer = new byte[Width * Height];
         }
 
+        public void openReader()
+        {
+            bodyReader.Open(BodyIndexPath);
+            readerFrameCount = bodyReader.FrameCount;
+        }
+
+        public void closeReader()
+        {
+            bodyReader.Close();
+            readerFrameCount = 0;
+        }
         public void Write()
         {
             while (true)
@@ -82,7 +99,10 @@ namespace KinectRecorder
                 }
             }
         }
-
+        public ImageSource Read()
+        {
+            return UtilityClass.BitmapToImageSource(bodyReader.ReadVideoFrame());
+        }
         public void SetVideoPath(string path, int br)
         {
             BodyIndexPath = path;
@@ -93,7 +113,6 @@ namespace KinectRecorder
         public void openVideoWriter()
         {
             Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            bodyWriter = new VideoFileWriter();
             bodyWriter.Open(BodyIndexPath, Width, Height, rationalFrameRate, VideoCodec.MPEG4, bitRate);
             frameCount = 0;
         }

@@ -135,13 +135,14 @@ namespace KinectRecorder
             this.depthFrameReader = this.kinectSensor.DepthFrameSource.OpenReader();
             depthHandler = DepthHandler.Instance;
             depthHandler.DepthHandlerSet(this.kinectSensor.DepthFrameSource.FrameDescription);
-            this.infraredDepthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
+            this.infraredDepthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Gray16, null);
             depthHandler.SetShowState(true);
         }
 
         public void InitializeSkeletalStream()
         {
-            skeletonHandler = new SkeletonHandler(this.kinectSensor.DepthFrameSource.FrameDescription.Width,
+            skeletonHandler = SkeletonHandler.Instance;
+            skeletonHandler.SkeletonHandlerSet(this.kinectSensor.DepthFrameSource.FrameDescription.Width,
                                            this.kinectSensor.DepthFrameSource.FrameDescription.Height,
                                            this.kinectSensor.CoordinateMapper);
             // open the reader for the body frames
@@ -154,7 +155,8 @@ namespace KinectRecorder
         {
             // open the reader for the depth frames
             this.bodyIndexFrameReader = this.kinectSensor.BodyIndexFrameSource.OpenReader();
-            bodyIHandler = new BodyIndexHandler(this.kinectSensor.BodyIndexFrameSource.FrameDescription);
+            bodyIHandler = BodyIndexHandler.Instance;
+            bodyIHandler.BodyIndexHandlerSet(this.kinectSensor.BodyIndexFrameSource.FrameDescription);
             // create the bitmap to display
             this.bodyIndexBitmap = new WriteableBitmap(bodyIHandler.Width, bodyIHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
             
@@ -163,7 +165,8 @@ namespace KinectRecorder
         public void InitializeInfraredStream()
         {
             this.infraredFrameReader = this.kinectSensor.InfraredFrameSource.OpenReader();
-            infraredHandler = new InfraredHandler(this.kinectSensor.InfraredFrameSource.FrameDescription);
+            infraredHandler = InfraredHandler.Instance;
+            infraredHandler.InfraredHandlerSet(this.kinectSensor.InfraredFrameSource.FrameDescription);
             //this.indraredBitmap = new WriteableBitmap(infraredHandler.Width, infraredHandler.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
             infraredHandler.SetShowState(false);
         }
@@ -506,7 +509,7 @@ namespace KinectRecorder
             infraredDepthBitmap.WritePixels(
                 new System.Windows.Int32Rect(0, 0, infraredDepthBitmap.PixelWidth, infraredDepthBitmap.PixelHeight),
                 depthHandler.depthPixels,
-                infraredDepthBitmap.PixelWidth * (int)BytesPerPixel,
+                infraredDepthBitmap.PixelWidth * 2,
                 0);
         }
 
@@ -577,7 +580,7 @@ namespace KinectRecorder
                 infraredDepthBitmap.WritePixels(
                     new System.Windows.Int32Rect(0, 0, infraredDepthBitmap.PixelWidth, infraredDepthBitmap.PixelHeight),
                     infraredHandler.infraredPixels,
-                    infraredDepthBitmap.PixelWidth * 4,
+                    infraredDepthBitmap.PixelWidth * 2,
                     0);
 
             }

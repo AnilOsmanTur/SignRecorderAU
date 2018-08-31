@@ -36,21 +36,30 @@ namespace KinectRecorder
         private Bitmap iBitmap;
 
         private Queue<Bitmap> infraredBitmapBuffer = new Queue<Bitmap>();
-        public byte[] infraredPixelBuffer;
+        //public byte[] infraredPixelBuffer;
 
         private String infraredVideoPath;
-        private VideoFileWriter infraredWriter;
+        private VideoFileWriter infraredWriter = new VideoFileWriter();
+        private VideoFileReader infraredReader = new VideoFileReader();
         private int bitRate = 1200000;
 
         public UInt32 frameCount = 0;
-
+        public long readerFrameCount = 0;
         public int Width, Height;
 
         private bool infraredRecording = false;
         public byte[] infraredPixels = null;
         public bool show;
 
-        public InfraredHandler(FrameDescription fd)
+        public byte[] infraredPreviewPixels = null;
+
+        static InfraredHandler instance = new InfraredHandler();
+        
+        public static InfraredHandler Instance
+        {
+            get { return instance; }
+        }
+        public void InfraredHandlerSet(FrameDescription fd)
         {
 
             infraredFrameDescription = fd;
@@ -58,13 +67,25 @@ namespace KinectRecorder
             Height = fd.Height;
 
             // to show on screen
-            infraredPixels = new byte[Width * Height * 4];
+            infraredPixels = new byte[Width * Height * 2];
 
             // to save to a video helper buffer
-            infraredPixelBuffer = new byte[Width * Height * 3];
+            //infraredPixelBuffer = new byte[Width * Height * 3];
+
+            infraredPreviewPixels = new byte[Width * Height * 2];
 
         }
+        public void openReader()
+        {
+            infraredReader.Open(infraredVideoPath);
+            readerFrameCount = infraredReader.FrameCount;
+        }
 
+        public void closeReader()
+        {
+            infraredReader.Close();
+            readerFrameCount = 0;
+        }
         public void SetShowState(bool state)
         {
             show = state;
@@ -78,6 +99,32 @@ namespace KinectRecorder
         public uint getBPP() // bytes per pixel
         {
             return this.infraredFrameDescription.BytesPerPixel;
+        }
+        public void Read(ref WriteableBitmap infraredPreview)
+        {
+            Bitmap img = infraredReader.ReadVideoFrame();
+
+            int k = 0;
+            for (int i = 0; i < img.Height; i++)
+            {
+                for (int j = 0; j < img.Width; j++)
+                {
+
+                    System.Drawing.Color c = img.GetPixel(j, i);
+
+                    //depth = (int)((float) depth / 4000 * ushort.MaxValue);
+                    this.infraredPreviewPixels[k++] = (byte)c.R;
+                    this.infraredPreviewPixels[k++] = (byte)c.G;
+
+                }
+
+            }
+
+            infraredPreview.WritePixels(
+                new Int32Rect(0, 0, img.Width, img.Height),
+                this.infraredPreviewPixels,
+                infraredPreview.PixelWidth * 2,
+                0);
         }
         public void Write()
         {
@@ -110,8 +157,7 @@ namespace KinectRecorder
         public void openVideoWriter()
         {
             Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            infraredWriter = new VideoFileWriter();
-            infraredWriter.Open(infraredVideoPath, Width, Height, rationalFrameRate, VideoCodec.MPEG4, bitRate);
+            infraredWriter.Open(infraredVideoPath, Width, Height, rationalFrameRate, VideoCodec.Raw, bitRate);
             frameCount = 0;
         }
         public void InfraredFrameArrival(InfraredFrame df, double fps, ref bool processed, WriteableBitmap infraredBitmap)
@@ -155,9 +201,9 @@ namespace KinectRecorder
                 ushort ir = infraredData[infraredIndex];
                 //byte intensity = (byte)(ir >> 8);
 
-                pixelData[infraredIndex * 3] = (byte)(ir / 1000);// intensity; // Red
-                pixelData[infraredIndex * 3 + 1] = (byte)((ir % 1000) / 100); // Green   
-                pixelData[infraredIndex * 3 + 2] = (byte)(ir % 100); // Blue
+                pixelData[infraredIndex * 3] = (byte)(ir);// intensity; // Red
+                pixelData[infraredIndex * 3 + 1] = (byte)(ir >> 8); // Green   
+                pixelData[infraredIndex * 3 + 2] = (byte) 0; // Blue
             }
 
             return UtilityClass.ByteArrayToBitmap(pixelData, this.Width, this.Height, format);
@@ -180,11 +226,9 @@ namespace KinectRecorder
                 intensityRatio = Math.Min(InfraredOutputValueMaximum, intensityRatio);
                 intensityRatio = Math.Max(InfraredOutputValueMinimum, intensityRatio);
 
-                byte intensity = (byte)(intensityRatio * 255.0f);
-                infraredPixels[pixelIndex++] = intensity; // Red
-                infraredPixels[pixelIndex++] = intensity; // Green   
-                infraredPixels[pixelIndex++] = intensity; // Blue
-                infraredPixels[pixelIndex++] = 255; // alpha
+                ushort intensity = (ushort)(intensityRatio * ushort.MaxValue);
+                infraredPixels[pixelIndex++] = (byte) (intensity); // Red
+                infraredPixels[pixelIndex++] = (byte) (intensity >> 8); // Green   
             }
 
 
