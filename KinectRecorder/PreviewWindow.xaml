@@ -1,7 +1,7 @@
 ﻿<Window x:Class="KinectRecorder.PreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="preview" WindowState="Maximized" Height="766.209" Width="1189.552" MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        Title="preview" WindowState="Maximized" Height="766.209" Width="1189.552">
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="50*"/>

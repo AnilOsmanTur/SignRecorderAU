@@ -133,7 +133,8 @@ namespace KinectRecorder
         public void InitializeDepthStream()
         {
             this.depthFrameReader = this.kinectSensor.DepthFrameSource.OpenReader();
-            depthHandler = new DepthHandler(this.kinectSensor.DepthFrameSource.FrameDescription);
+            depthHandler = DepthHandler.Instance;
+            depthHandler.DepthHandlerSet(this.kinectSensor.DepthFrameSource.FrameDescription);
             this.infraredDepthBitmap = new WriteableBitmap(depthHandler.Width, depthHandler.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
             depthHandler.SetShowState(true);
         }

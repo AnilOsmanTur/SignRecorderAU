@@ -23,16 +23,22 @@ namespace KinectRecorder
     public partial class PreviewWindow : Window
     {
         private ImageSource colorPreviewBitmap;
-        private ImageSource depthPreviewBitmap;
+        private WriteableBitmap depthPreviewBitmap;
         private ImageSource infraredPreviewBitmap;
         private ImageSource bodyIndexPreviewBitmap;
         private ColorHandler ch;
+        private DepthHandler dh;
         private int count = 0;
         public PreviewWindow()
         {
             InitializeComponent();
             ch = ColorHandler.Instance;
             ch.openReader();
+            dh = DepthHandler.Instance;
+            dh.openReader();
+
+            depthPreviewBitmap = new WriteableBitmap(dh.Width, dh.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+
             ComponentDispatcher.ThreadIdle += new System.EventHandler(ComponentDispatcher_ThreadIdle);
         }
 
@@ -42,19 +48,16 @@ namespace KinectRecorder
             ch.closeReader();
         }
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            
-            
-        }
 
         void ComponentDispatcher_ThreadIdle(object sender, EventArgs e)
         {
             if (count < ch.readerFrameCount) 
             { 
                 color_preview.Source = ch.Read();
+                dh.Read(ref depthPreviewBitmap);
+                depth_preview.Source = depthPreviewBitmap;
                 count++;
-            }
+            }        
         }
 
 
