@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows;
+using System.IO;
 
 namespace KinectRecorder
 {
@@ -23,18 +24,18 @@ namespace KinectRecorder
         /// Size of the RGB pixel in the bitmap
         private const int BytesPerPixel = 4;
 
-        private Bitmap dBitmap;
-
         static DepthHandler instance = new DepthHandler();
 
-        private Queue<Bitmap> depthBitmapBuffer = new Queue<Bitmap>();
+        private Queue<byte[]> depthBinaryBuffer = new Queue<byte[]>();
         public byte[] depthPixelBuffer;
 
         private String depthVideoPath;
-        private VideoFileWriter depthWriter = new VideoFileWriter();
-        private VideoFileReader depthReader = new VideoFileReader();
-        private int bitRate = 1200000;
+        private BinaryReader depthReader;
 
+        private BinaryWriter binaryWriter;
+
+        private int savedBinaryCount = 0;
+        private int readBinaryCount = 0;
         public UInt32 frameCount = 0;
         public long readerFrameCount = 0;
 
@@ -64,7 +65,7 @@ namespace KinectRecorder
             depthPixels = new byte[Width * Height * 2];
             
             // to save to a video helper buffer
-            depthPixelBuffer = new byte[Width * Height * 3];
+            depthPixelBuffer = new byte[Width * Height * 2];
 
             depthPreviewPixels = new byte[Width * Height * 2];
         }
@@ -73,11 +74,19 @@ namespace KinectRecorder
         {
             show = state;
         }
-        public void openReader()
+        public void openReader(string path)
         {
-            depthReader.Open(depthVideoPath);
-            readerFrameCount = depthReader.FrameCount;
-        }
+            try
+            {
+                depthReader = new BinaryReader(new FileStream(path, FileMode.Open));
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message + "\n Cannot open file.");
+                return;
+            }
+
+            readerFrameCount = savedBinaryCount - 1;        }
 
         public void closeReader()
         {
@@ -85,47 +94,45 @@ namespace KinectRecorder
             readerFrameCount = 0;
         }
 
+        public void startReading()
+        {
+            readBinaryCount = 0;
+        }
+
         
         public void Read(ref WriteableBitmap depthPreview)
         {
-            Bitmap img = depthReader.ReadVideoFrame();
 
-            int k = 0;
-            for (int i = 0; i < img.Height; i++)
-            {
-                for (int j = 0; j < img.Width; j++ )
-                {
-                    
-                    System.Drawing.Color c = img.GetPixel(j, i);
-                    
-                    //depth = (int)((float) depth / 4000 * ushort.MaxValue);
-                    this.depthPreviewPixels[k++] = (byte)c.R;
-                    this.depthPreviewPixels[k++] = (byte)c.G;
-                    
-                }
-                
-            }
+            openReader(depthVideoPath+"/"+readBinaryCount);
+
+            this.depthPreviewPixels = depthReader.ReadBytes(Width * Height * 2);
+
 
             depthPreview.WritePixels(
-                new Int32Rect(0, 0, img.Width, img.Height),
+                new Int32Rect(0, 0, (int)(depthPreview.Width),(int)(depthPreview.Height)),
                 this.depthPreviewPixels,
                 depthPreview.PixelWidth*2,
                 0);
+
+            readBinaryCount++;
+            closeReader();
         }
         public void Write()
         {
             while (true)
             {
                 // Console.WriteLine("Depth");
-                if (depthBitmapBuffer.Count > 0)
+                if (depthBinaryBuffer.Count > 0)
                 {
+                    openBinaryWriter();
                     //Console.WriteLine(depthBitmapBuffer.Count);
-                    this.depthWriter.WriteVideoFrame(depthBitmapBuffer.Dequeue());
+                    this.binaryWriter.Write(depthBinaryBuffer.Dequeue());
+                    savedBinaryCount++;
+                    closeBinaryWriter();
+
                 }
                 else if (!depthRecording)
                 {
-                    depthWriter.Close();
-                    Console.WriteLine("depth writer closed.");
                     break;
                 }
                 else
@@ -137,17 +144,36 @@ namespace KinectRecorder
 
         public void SetVideoPath(string path, int br)
         {
-            depthVideoPath = path;
-            bitRate = br;
-            openVideoWriter();
+            depthVideoPath = path + "/depth";
+            try
+            {
+                Directory.CreateDirectory(depthVideoPath);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine("The directory creating process failed {0}", e.ToString());
+            }
+
+            frameCount = 0;
+            savedBinaryCount = 0;
         }
 
-        public void openVideoWriter()
+        public void openBinaryWriter()
         {
-            Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            
-            depthWriter.Open(depthVideoPath, Width, Height, rationalFrameRate, VideoCodec.MPEG4, bitRate);
-            frameCount = 0;
+            try
+            {
+                binaryWriter = new BinaryWriter(new FileStream(depthVideoPath+"/"+savedBinaryCount, FileMode.Create));
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message + "\n Cannot create directory.");
+                return;
+            }
+        }
+
+        public void closeBinaryWriter()
+        {
+            binaryWriter.Close();
         }
 
         public void setRecordingState(bool state)
@@ -188,17 +214,16 @@ namespace KinectRecorder
                     if (depthRecording)
                     {
                         garbageCount++;
-                        this.dBitmap = UtilityClass.ByteArrayToBitmap(this.depthPixelBuffer, Width, Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                        this.depthBitmapBuffer.Enqueue(this.dBitmap);
+                        this.depthBinaryBuffer.Enqueue((byte[])(depthPixelBuffer.Clone()));
                         this.frameCount++;
                         if (fps < 16.0)
                         {
                             garbageCount++;
                             Console.WriteLine("fps drop yaşandı");
-                            this.depthBitmapBuffer.Enqueue(this.dBitmap);
+                            this.depthBinaryBuffer.Enqueue((byte[])(depthPixelBuffer.Clone()));
                             this.frameCount++;
                         }
-                        if(garbageCount > 200)
+                        if(garbageCount > 1000)
                         {
                             System.GC.Collect();
                             garbageCount = 0;
@@ -221,7 +246,7 @@ namespace KinectRecorder
             ushort* frameData = (ushort*)depthFrameData;
 
             // convert depth to a visual representation
-            int stride = 2, strideWrite = 3, j, k;
+            int stride = 2, strideWrite = 2, j, k;
             for (int i = 0; i < (int)(depthFrameDataSize / this.depthFrameDescription.BytesPerPixel); ++i)
             {
                 // Get the depth for this pixel
@@ -232,13 +257,12 @@ namespace KinectRecorder
                 // Values outside the reliable depth range are mapped to 0 (black).
                 if (depth >= minDepth && depth <= maxDepth)
                 {
-                    ushort depthShow = (ushort)((depth / (float)4000) * (ushort.MaxValue-1));
+                    ushort depthShow = (ushort)(((depth-500) / (float)4000) * (ushort.MaxValue-1));
                     this.depthPixels[j] = (byte)(depthShow);
                     this.depthPixels[j + 1] = (byte)(depthShow >> 8);
 
                     this.depthPixelBuffer[k] = (byte)(depth);
                     this.depthPixelBuffer[k + 1] = (byte)(depth >> 8); 
-                    this.depthPixelBuffer[k + 2] = (byte)(0);
 
 
                 }
@@ -249,7 +273,6 @@ namespace KinectRecorder
 
                     this.depthPixelBuffer[k] = (byte)0; //(frameData[i] / 1000);
                     this.depthPixelBuffer[k+1] = (byte)0; //((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k+2] = (byte)0; //(frameData[i] % 100);
                 }
                 else
                 {
@@ -258,7 +281,6 @@ namespace KinectRecorder
 
                     this.depthPixelBuffer[k] = (byte)255; //(frameData[i] / 1000);
                     this.depthPixelBuffer[k+1] = (byte)255; //((frameData[i] % 1000) / 100);
-                    this.depthPixelBuffer[k+2] = (byte)0; //(frameData[i] % 100);
                 }
             }
         }

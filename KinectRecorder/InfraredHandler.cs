@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -35,13 +36,16 @@ namespace KinectRecorder
 
         private Bitmap iBitmap;
 
-        private Queue<Bitmap> infraredBitmapBuffer = new Queue<Bitmap>();
+        private Queue<byte[]> infraredBinaryBuffer = new Queue<byte[]>();
         //public byte[] infraredPixelBuffer;
 
         private String infraredVideoPath;
         private VideoFileWriter infraredWriter = new VideoFileWriter();
         private VideoFileReader infraredReader = new VideoFileReader();
         private int bitRate = 1200000;
+
+        private BinaryWriter binaryWriter;
+        private int savedBinaryCount = 0;
 
         public UInt32 frameCount = 0;
         public long readerFrameCount = 0;
@@ -131,15 +135,17 @@ namespace KinectRecorder
             while (true)
             {
                 // Console.WriteLine("Depth");
-                if (infraredBitmapBuffer.Count > 0)
+                if (infraredBinaryBuffer.Count > 0)
                 {
+                    openBinaryWriter();
                     //Console.WriteLine(depthBitmapBuffer.Count);
-                    this.infraredWriter.WriteVideoFrame(infraredBitmapBuffer.Dequeue());
+                    this.binaryWriter.Write(infraredBinaryBuffer.Dequeue());
+                    savedBinaryCount++;
+                    closeBinaryWriter();
+
                 }
                 else if (!infraredRecording)
                 {
-                    infraredWriter.Close();
-                    Console.WriteLine("depth writer closed.");
                     break;
                 }
                 else
@@ -151,15 +157,38 @@ namespace KinectRecorder
         public void SetVideoPath(string path, int br)
         {
             infraredVideoPath = path;
-            bitRate = br;
-            openVideoWriter();
-        }
-        public void openVideoWriter()
-        {
-            Accord.Math.Rational rationalFrameRate = new Accord.Math.Rational(30);
-            infraredWriter.Open(infraredVideoPath, Width, Height, rationalFrameRate, VideoCodec.Raw, bitRate);
+            infraredVideoPath = path + "/infrared";
+            try
+            {
+                Directory.CreateDirectory(infraredVideoPath);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine("The directory creating sprocess failed {0}", e.ToString());
+            }
+
             frameCount = 0;
+            savedBinaryCount = 0;
         }
+
+        public void openBinaryWriter()
+        {
+            try
+            {
+                binaryWriter = new BinaryWriter(new FileStream(infraredVideoPath + "/" + savedBinaryCount, FileMode.Create));
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message + "\n Cannot create directory.");
+                return;
+            }
+        }
+
+        public void closeBinaryWriter()
+        {
+            binaryWriter.Close();
+        }
+
         public void InfraredFrameArrival(InfraredFrame df, double fps, ref bool processed, WriteableBitmap infraredBitmap)
         {
             using (Microsoft.Kinect.KinectBuffer infraredBuffer = df.LockImageBuffer())
@@ -173,16 +202,15 @@ namespace KinectRecorder
                     processed = true;
                     if (infraredRecording)
                     {
-                        this.iBitmap = IRFrameToBitmap(df);
-                        this.infraredBitmapBuffer.Enqueue(this.iBitmap);
-                        //System.GC.Collect();
+                        this.infraredBinaryBuffer.Enqueue((byte[])(infraredPixels.Clone()));
                         this.frameCount++;
                         if (fps < 16.0)
                         {
                             Console.WriteLine("fps drop yaşandı");
-                            this.infraredBitmapBuffer.Enqueue(this.iBitmap);
+                            this.infraredBinaryBuffer.Enqueue((byte[])(infraredPixels.Clone()));
                             this.frameCount++;
                         }
+                       
                     }
                 }
             }
@@ -192,7 +220,7 @@ namespace KinectRecorder
             System.Drawing.Imaging.PixelFormat format = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
 
             ushort[] infraredData = new ushort[frame.FrameDescription.LengthInPixels];
-            byte[] pixelData = new byte[frame.FrameDescription.LengthInPixels * 3];
+            byte[] pixelData = new byte[frame.FrameDescription.LengthInPixels * 2];
 
             frame.CopyFrameDataToArray(infraredData);
 
@@ -203,7 +231,6 @@ namespace KinectRecorder
 
                 pixelData[infraredIndex * 3] = (byte)(ir);// intensity; // Red
                 pixelData[infraredIndex * 3 + 1] = (byte)(ir >> 8); // Green   
-                pixelData[infraredIndex * 3 + 2] = (byte) 0; // Blue
             }
 
             return UtilityClass.ByteArrayToBitmap(pixelData, this.Width, this.Height, format);

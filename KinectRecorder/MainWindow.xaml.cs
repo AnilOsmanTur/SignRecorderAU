@@ -334,11 +334,20 @@ namespace KinectRecorder
 
         private void writerHelper()
         {
+            try
+            {
+                Directory.CreateDirectory(fileBasePath);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine("The directory creating process failed {0}", e.ToString());
+            }
+
             int bitRate = 12000000;
             if (colorSave)
             {
                 colorHandler.setRecordingState(true);
-                colorHandler.SetVideoPath(fileBasePath + "_Color.avi", bitRate);
+                colorHandler.SetVideoPath(fileBasePath + "/color.mp4", bitRate);
                 Thread colorWriteThread = new Thread(new ThreadStart(colorHandler.Write));
                 colorWriteThread.Priority = ThreadPriority.BelowNormal;
                 colorWriteThread.Start();
@@ -351,7 +360,7 @@ namespace KinectRecorder
             if (depthSave)
             {
                 depthHandler.setRecordingState(true);
-                depthHandler.SetVideoPath(fileBasePath + "_Depth.avi", bitRate);
+                depthHandler.SetVideoPath(fileBasePath, bitRate);
                 Thread depthWriteThread = new Thread(new ThreadStart(depthHandler.Write));
                 depthWriteThread.Priority = ThreadPriority.BelowNormal;
                 depthWriteThread.Start();
@@ -364,7 +373,7 @@ namespace KinectRecorder
             if (bodySave)
             {
                 bodyIHandler.setRecordingState(true);
-                bodyIHandler.SetVideoPath(fileBasePath + "_Body.avi", bitRate);
+                bodyIHandler.SetVideoPath(fileBasePath + "/body.avi", bitRate);
                 Thread bodyWriteThread = new Thread(new ThreadStart(bodyIHandler.Write));
                 bodyWriteThread.Priority = ThreadPriority.BelowNormal;
                 bodyWriteThread.Start();
@@ -378,7 +387,7 @@ namespace KinectRecorder
             if (skeletonSave)
             {
                 skeletonHandler.setRecordingState(true);
-                skeletonHandler.SetFilePath(fileBasePath+"_Skeleton.csv");
+                skeletonHandler.SetFilePath(fileBasePath+"/skeleton.csv");
             }
             else
             {
@@ -387,7 +396,7 @@ namespace KinectRecorder
             if (infraredSave)
             {
                 infraredHandler.setRecordingState(true);
-                infraredHandler.SetVideoPath(fileBasePath + "_Infrared.avi", bitRate);
+                infraredHandler.SetVideoPath(fileBasePath, bitRate);
                 Thread infraredWriteThread = new Thread(new ThreadStart(infraredHandler.Write));
                 infraredWriteThread.Priority = ThreadPriority.BelowNormal;
                 infraredWriteThread.Start();
@@ -791,11 +800,11 @@ namespace KinectRecorder
             String timeStamp = GetTimestamp(DateTime.Now);
             if (isTutorial)
             {
-                basePath = folderPath + "\\" + selectedWord.id.ToString() + "\\Tutorial";                           
+                basePath = folderPath + "\\" + selectedWord.word.ToString() + "\\Tutorial";                           
             }
             else
             {
-                basePath = folderPath + "\\" + selectedWord.id.ToString() + "\\Samples";
+                basePath = folderPath + "\\" + selectedWord.word.ToString() + "\\Samples";
             }
 
             fileBasePath = basePath + "\\" + selectedUser.id.ToString() + "_" + repeatNumber + "_" + timeStamp;

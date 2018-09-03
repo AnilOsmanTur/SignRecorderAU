@@ -46,16 +46,16 @@ namespace KinectRecorder
             bh.openReader();
 
             dh = DepthHandler.Instance;
-            dh.openReader();
+            dh.startReading();
             
-            ih = InfraredHandler.Instance;
-            ih.openReader();
+        //    ih = InfraredHandler.Instance;
+        //    ih.openReader();
 
             //sh = SkeletonHandler.Instance;
             //sh.openReader();
 
             depthPreviewBitmap = new WriteableBitmap(dh.Width, dh.Height, 96.0, 96.0, PixelFormats.Gray16, null);
-            infraredPreviewBitmap = new WriteableBitmap(ih.Width, ih.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+            //infraredPreviewBitmap = new WriteableBitmap(ih.Width, ih.Height, 96.0, 96.0, PixelFormats.Gray16, null);
 
             ComponentDispatcher.ThreadIdle += new System.EventHandler(ComponentDispatcher_ThreadIdle);
         }
@@ -65,8 +65,8 @@ namespace KinectRecorder
             this.DialogResult = true;
             ch.closeReader();
             bh.closeReader();
-            dh.closeReader();
-            ih.closeReader();
+        //    dh.closeReader();
+        //    ih.closeReader();
         }
 
 
@@ -81,8 +81,8 @@ namespace KinectRecorder
                 dh.Read(ref depthPreviewBitmap);
                 depth_preview.Source = depthPreviewBitmap;
 
-                ih.Read(ref infraredPreviewBitmap);
-                infrared_preview.Source = infraredPreviewBitmap;
+             //   ih.Read(ref infraredPreviewBitmap);
+             //   infrared_preview.Source = infraredPreviewBitmap;
 
 
 
