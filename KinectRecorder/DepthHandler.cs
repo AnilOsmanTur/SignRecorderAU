@@ -108,6 +108,28 @@ namespace KinectRecorder
             this.depthPreviewPixels = depthReader.ReadBytes(Width * Height * 2);
 
 
+            int stride = 2, j, k;
+            for (int i = 0; i < Width * Height; ++i)
+            {
+                k = stride * i;
+                // Get the depth for this pixel
+                ushort depth = (ushort)((ushort)depthPreviewPixels[k] + (ushort)(depthPreviewPixels[k + 1] << 8));
+                
+                // To convert to a byte, we're mapping the depth value to the byte range.
+                // Values outside the reliable depth range are mapped to 0 (black).
+
+                if(depth != 0)
+                {
+                    depth = (ushort)(((depth - 500) / (float)4000) * (ushort.MaxValue - 1));
+
+                    this.depthPreviewPixels[k] = (byte)(depth);
+                    this.depthPreviewPixels[k + 1] = (byte)(depth >> 8);
+                }
+               
+            }
+
+
+
             depthPreview.WritePixels(
                 new Int32Rect(0, 0, (int)(depthPreview.Width),(int)(depthPreview.Height)),
                 this.depthPreviewPixels,
@@ -223,7 +245,7 @@ namespace KinectRecorder
                             this.depthBinaryBuffer.Enqueue((byte[])(depthPixelBuffer.Clone()));
                             this.frameCount++;
                         }
-                        if(garbageCount > 1000)
+                        if(garbageCount > 500)
                         {
                             System.GC.Collect();
                             garbageCount = 0;

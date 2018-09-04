@@ -65,16 +65,19 @@ namespace KinectRecorder
         /// </summary>        
         private readonly Pen inferredBonePen = new Pen(Brushes.Gray, 1);
 
+        private readonly Pen previewBonePen = new Pen(Brushes.HotPink, 6);
+
         /// <summary>
         /// Drawing group for body rendering output
         /// </summary>
         private DrawingGroup drawingGroup;
+        private DrawingGroup previewDrawingGroup;
 
         /// <summary>
         /// Drawing image that we will display
         /// </summary>
         private DrawingImage imageSource;
-
+        private DrawingImage previewImageSource;
         /// <summary>
         /// Coordinate mapper to map one type of point to another
         /// </summary>
@@ -114,6 +117,9 @@ namespace KinectRecorder
         private bool skeletonRecording = false;
         private String skeletonFilePath;
         public UInt32 frameCount = 0;
+
+        private double[] depthSkeleton;
+        int skeletonCounter = 0;
 
         private CsvWriter csvWriter = null;
         private StreamWriter stream = null;
@@ -190,10 +196,14 @@ namespace KinectRecorder
             // Create an image source that we can use in our image control
             this.imageSource = new DrawingImage(this.drawingGroup);
 
+            this.previewDrawingGroup = new DrawingGroup();
+            this.previewImageSource = new DrawingImage(this.previewDrawingGroup);
+
         }
 
         public void openReader()
         {
+            skeletonCounter = 0;
             streamReader = new StreamReader(skeletonFilePath);
             csvReader = new CsvReader(streamReader);
 
@@ -211,212 +221,49 @@ namespace KinectRecorder
 
         public void Read()
         {
-            ////SpineBase_X = a[i++];
-            ////SpineBase_Y = a[i++];
-            ////SpineBase_Z = a[i++];
-            ////SpineBase_depth_X = a[i++];
-            ////SpineBase_depth_Y = a[i++];
-            ////SpineBase_color_X = a[i++];
-            ////SpineBase_color_Y = a[i++];
-            //////     Middle of the spine.
-            ////SpineMid_X = a[i++];
-            ////SpineMid_Y = a[i++];
-            ////SpineMid_Z = a[i++];
-            ////SpineMid_depth_X = a[i++];
-            ////SpineMid_depth_Y = a[i++];
-            ////SpineMid_color_X = a[i++];
-            ////SpineMid_color_Y = a[i++];
-            //////     Neck.
-            ////Neck_X = a[i++];
-            ////Neck_Y = a[i++];
-            ////Neck_Z = a[i++];
-            ////Neck_depth_X = a[i++];
-            ////Neck_depth_Y = a[i++];
-            ////Neck_color_X = a[i++];
-            ////Neck_color_Y = a[i++];
-            //////     Head
-            ////Head_X = a[i++];
-            ////Head_Y = a[i++];
-            ////Head_Z = a[i++];
-            ////Head_depth_X = a[i++];
-            ////Head_depth_Y = a[i++];
-            ////Head_color_X = a[i++];
-            ////Head_color_Y = a[i++];
-            //////     Left shoulder.
-            ////ShoulderLeft_X = a[i++];
-            ////ShoulderLeft_Y = a[i++];
-            ////ShoulderLeft_Z = a[i++];
-            ////ShoulderLeft_depth_X = a[i++];
-            ////ShoulderLeft_depth_Y = a[i++];
-            ////ShoulderLeft_color_X = a[i++];
-            ////ShoulderLeft_color_Y = a[i++];
-            //////     Left elbow.
-            ////ElbowLeft_X = a[i++];
-            ////ElbowLeft_Y = a[i++];
-            ////ElbowLeft_Z = a[i++];
-            ////ElbowLeft_depth_X = a[i++];
-            ////ElbowLeft_depth_Y = a[i++];
-            ////ElbowLeft_color_X = a[i++];
-            ////ElbowLeft_color_Y = a[i++];
-            //////     Left wrist.
-            ////WristLeft_X = a[i++];
-            ////WristLeft_Y = a[i++];
-            ////WristLeft_Z = a[i++];
-            ////WristLeft_depth_X = a[i++];
-            ////WristLeft_depth_Y = a[i++];
-            ////WristLeft_color_X = a[i++];
-            ////WristLeft_color_Y = a[i++];
-            //////     Left hand.
-            ////HandLeft_X = a[i++];
-            ////HandLeft_Y = a[i++];
-            ////HandLeft_Z = a[i++];
-            ////HandLeft_depth_X = a[i++];
-            ////HandLeft_depth_Y = a[i++];
-            ////HandLeft_color_X = a[i++];
-            ////HandLeft_color_Y = a[i++];
-            //////     Right shoulder.
-            ////ShoulderRight_X = a[i++];
-            ////ShoulderRight_Y = a[i++];
-            ////ShoulderRight_Z = a[i++];
-            ////ShoulderRight_depth_X = a[i++];
-            ////ShoulderRight_depth_Y = a[i++];
-            ////ShoulderRight_color_X = a[i++];
-            ////ShoulderRight_color_Y = a[i++];
-            //////     Right elbow.
-            ////ElbowRight_X = a[i++];
-            ////ElbowRight_Y = a[i++];
-            ////ElbowRight_Z = a[i++];
-            ////ElbowRight_depth_X = a[i++];
-            ////ElbowRight_depth_Y = a[i++];
-            ////ElbowRight_color_X = a[i++];
-            ////ElbowRight_color_Y = a[i++];
-            //////     Right wrist.
-            ////WristRight_X = a[i++];
-            ////WristRight_Y = a[i++];
-            ////WristRight_Z = a[i++];
-            ////WristRight_depth_X = a[i++];
-            ////WristRight_depth_Y = a[i++];
-            ////WristRight_color_X = a[i++];
-            ////WristRight_color_Y = a[i++];
-            //////     Right hand.
-            ////HandRight_X = a[i++];
-            ////HandRight_Y = a[i++];
-            ////HandRight_Z = a[i++];
-            ////HandRight_depth_X = a[i++];
-            ////HandRight_depth_Y = a[i++];
-            ////HandRight_color_X = a[i++];
-            ////HandRight_color_Y = a[i++];
-            //////     Left hip.
-            ////HipLeft_X = a[i++];
-            ////HipLeft_Y = a[i++];
-            ////HipLeft_Z = a[i++];
-            ////HipLeft_depth_X = a[i++];
-            ////HipLeft_depth_Y = a[i++];
-            ////HipLeft_color_X = a[i++];
-            ////HipLeft_color_Y = a[i++];
-            //////     Left knee.
-            ////KneeLeft_X = a[i++];
-            ////KneeLeft_Y = a[i++];
-            ////KneeLeft_Z = a[i++];
-            ////KneeLeft_depth_X = a[i++];
-            ////KneeLeft_depth_Y = a[i++];
-            ////KneeLeft_color_X = a[i++];
-            ////KneeLeft_color_Y = a[i++];
-            //////     Left ankle.
-            ////AnkleLeft_X = a[i++];
-            ////AnkleLeft_Y = a[i++];
-            ////AnkleLeft_Z = a[i++];
-            ////AnkleLeft_depth_X = a[i++];
-            ////AnkleLeft_depth_Y = a[i++];
-            ////AnkleLeft_color_X = a[i++];
-            ////AnkleLeft_color_Y = a[i++];
-            //////     Left foot.
-            ////FootLeft_X = a[i++];
-            ////FootLeft_Y = a[i++];
-            ////FootLeft_Z = a[i++];
-            ////FootLeft_depth_X = a[i++];
-            ////FootLeft_depth_Y = a[i++];
-            ////FootLeft_color_X = a[i++];
-            ////FootLeft_color_Y = a[i++];
-            //////     Right hip.
-            ////HipRight_X = a[i++];
-            ////HipRight_Y = a[i++];
-            ////HipRight_Z = a[i++];
-            ////HipRight_depth_X = a[i++];
-            ////HipRight_depth_Y = a[i++];
-            ////HipRight_color_X = a[i++];
-            ////HipRight_color_Y = a[i++];
-            //////     Right knee.
-            ////KneeRight_X = a[i++];
-            ////KneeRight_Y = a[i++];
-            ////KneeRight_Z = a[i++];
-            ////KneeRight_depth_X = a[i++];
-            ////KneeRight_depth_Y = a[i++];
-            ////KneeRight_color_X = a[i++];
-            ////KneeRight_color_Y = a[i++];
-            //////     Right ankle.
-            ////AnkleRight_X = a[i++];
-            ////AnkleRight_Y = a[i++];
-            ////AnkleRight_Z = a[i++];
-            ////AnkleRight_depth_X = a[i++];
-            ////AnkleRight_depth_Y = a[i++];
-            ////AnkleRight_color_X = a[i++];
-            ////AnkleRight_color_Y = a[i++];
-            //////     Right foot.
-            ////FootRight_X = a[i++];
-            ////FootRight_Y = a[i++];
-            ////FootRight_Z = a[i++];
-            ////FootRight_depth_X = a[i++];
-            ////FootRight_depth_Y = a[i++];
-            ////FootRight_color_X = a[i++];
-            ////FootRight_color_Y = a[i++];
-            //////     Between the shoulders on the spine.
-            ////SpineShoulder_X = a[i++];
-            ////SpineShoulder_Y = a[i++];
-            ////SpineShoulder_Z = a[i++];
-            ////SpineShoulder_depth_X = a[i++];
-            ////SpineShoulder_depth_Y = a[i++];
-            ////SpineShoulder_color_X = a[i++];
-            ////SpineShoulder_color_Y = a[i++];
-            //////     Tip of the left hand.
-            ////HandTipLeft_X = a[i++];
-            ////HandTipLeft_Y = a[i++];
-            ////HandTipLeft_Z = a[i++];
-            ////HandTipLeft_depth_X = a[i++];
-            ////HandTipLeft_depth_Y = a[i++];
-            ////HandTipLeft_color_X = a[i++];
-            ////HandTipLeft_color_Y = a[i++];
-            //////     Left thumb.
-            ////ThumbLeft_X = a[i++];
-            ////ThumbLeft_Y = a[i++];
-            ////ThumbLeft_Z = a[i++];
-            ////ThumbLeft_depth_X = a[i++];
-            ////ThumbLeft_depth_Y = a[i++];
-            ////ThumbLeft_color_X = a[i++];
-            ////ThumbLeft_color_Y = a[i++];
-            //////     Tip of the right hand.
-            ////HandTipRight_X = a[i++];
-            ////HandTipRight_Y = a[i++];
-            ////HandTipRight_Z = a[i++];
-            ////HandTipRight_depth_X = a[i++];
-            ////HandTipRight_depth_Y = a[i++];
-            ////HandTipRight_color_X = a[i++];
-            ////HandTipRight_color_Y = a[i++];
-            //////     Right thumb.
-            ////ThumbRight_X = a[i++];
-            ////ThumbRight_Y = a[i++];
-            ////ThumbRight_Z = a[i++];
-            ////ThumbRight_depth_X = a[i++];
-            ////ThumbRight_depth_Y = a[i++];
-            ////ThumbRight_color_X = a[i++];
-            ////ThumbRight_color_Y = a[i++];
+            using (DrawingContext dc = this.previewDrawingGroup.Open())
+            {
+                dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
+
+                depthSkeleton = skeletons[skeletonCounter].getDepthValues();
+
+                this.DrawPreviewBody(depthSkeleton, dc);
+
+                //this.DrawPreviewHand(body.HandLeftState, jointPoints[JointType.HandLeft], dc);
+                //this.DrawPreviewHand(body.HandRightState, jointPoints[JointType.HandRight], dc);
+
+
+
+                skeletonCounter++;
+            }
+         
         }
 
+        public void DrawPreviewBody(double[] depthValues, DrawingContext dc)
+        {
+            foreach (var bone in bones)
+            {
+                DrawBoneFromArray(depthValues, bone.Item1, bone.Item2, dc);
+            }
+
+            for (int i = 0; i < 25; i++)
+            {
+                Point point = new Point(depthValues[i * 2], depthValues[i * 2 + 1]);
+
+                dc.DrawEllipse(this.trackedJointBrush, null, point, JointThickness, JointThickness);
+
+            }
+        }
 
 
         public DrawingImage getImageSource()
         {
             return this.imageSource;
+        }
+
+        public DrawingImage getPreviewImageSource()
+        {
+            return this.previewImageSource;
         }
 
         public void renderSkeleton(BodyFrameArrivedEventArgs args)
@@ -554,6 +401,22 @@ namespace KinectRecorder
                 }
             }
         }
+
+
+        private void DrawBoneFromArray(double[] jointDepthValues, JointType jointType0, JointType jointType1, DrawingContext drawingContext)
+        {
+            Point point0 = new Point(jointDepthValues[(int)jointType0 * 2], jointDepthValues[(int)(jointType0) * 2 + 1]);
+
+            Point point1 = new Point(jointDepthValues[(int)jointType1 * 2], jointDepthValues[(int)(jointType1) * 2 + 1]);
+
+            Pen drawPen = previewBonePen;
+
+            //drawPen = drawingPen;
+            
+            drawingContext.DrawLine(drawPen, point0, point1);
+        }
+
+
 
         /// <summary>
         /// Draws one bone of a body (joint to joint)

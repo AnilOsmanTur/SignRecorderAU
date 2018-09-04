@@ -493,5 +493,66 @@ namespace KinectRecorder
             ThumbRight_color_X = a[i++];
             ThumbRight_color_Y = a[i++];
         }
+
+        public double[] getDepthValues()
+        {
+            double[] depthValues = new double[50];
+
+            depthValues[0] = SpineBase_depth_X;
+            depthValues[1] = SpineBase_depth_Y;
+            depthValues[2] = SpineMid_depth_X;
+            depthValues[3] = SpineMid_depth_Y;
+            depthValues[4] = Neck_depth_X;
+            depthValues[5] = Neck_depth_Y;
+            depthValues[6] = Head_depth_X;
+            depthValues[7] = Head_depth_Y;
+            depthValues[8] = ShoulderLeft_depth_X;
+            depthValues[9] = ShoulderLeft_depth_Y;
+            depthValues[10] = ElbowLeft_depth_X;
+            depthValues[11] = ElbowLeft_depth_Y;
+            depthValues[12] = WristLeft_depth_X;
+            depthValues[13] = WristLeft_depth_Y;
+            depthValues[14] = HandLeft_depth_X;
+            depthValues[15] = HandLeft_depth_Y;
+            depthValues[16] = ShoulderRight_depth_X;
+            depthValues[17] = ShoulderRight_depth_Y;
+            depthValues[18] = ElbowRight_depth_X;
+            depthValues[19] = ElbowRight_depth_Y;
+            depthValues[20] = WristRight_depth_X;
+            depthValues[21] = WristRight_depth_Y;
+            depthValues[22] = HandRight_depth_X;
+            depthValues[23] = HandRight_depth_Y;
+            depthValues[24] = HipLeft_depth_X;
+            depthValues[25] = HipLeft_depth_Y;
+            depthValues[26] = KneeLeft_depth_X;
+            depthValues[27] = KneeLeft_depth_Y;
+            depthValues[28] = AnkleLeft_depth_X;
+            depthValues[29] = AnkleLeft_depth_Y;
+            depthValues[30] = FootLeft_depth_X;
+            depthValues[31] = FootLeft_depth_Y;
+            depthValues[32] = HipRight_depth_X;
+            depthValues[33] = HipRight_depth_Y;
+            depthValues[34] = KneeRight_depth_X;
+            depthValues[35] = KneeRight_depth_Y;
+            depthValues[36] = AnkleRight_depth_X;
+            depthValues[37] = AnkleRight_depth_Y;
+            depthValues[38] = FootRight_depth_X;
+            depthValues[39] = FootRight_depth_Y;
+            depthValues[40] = SpineShoulder_depth_X;
+            depthValues[41] = SpineShoulder_depth_Y;
+            depthValues[42] = HandTipLeft_depth_X;
+            depthValues[43] = HandTipLeft_depth_Y;
+            depthValues[44] = ThumbLeft_depth_X;
+            depthValues[45] = ThumbLeft_depth_Y;
+            depthValues[46] = HandTipRight_depth_X;
+            depthValues[47] = HandTipRight_depth_Y;
+            depthValues[48] = ThumbRight_depth_X;
+            depthValues[49] = ThumbRight_depth_Y;
+
+            return depthValues;
+
+        }
+
     }
+
 }

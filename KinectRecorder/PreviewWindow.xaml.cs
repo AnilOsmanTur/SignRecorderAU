@@ -27,7 +27,7 @@ namespace KinectRecorder
         private WriteableBitmap infraredPreviewBitmap;
         private ImageSource bodyIndexPreviewBitmap;
         private DrawingImage skeletalImage = null;
-        
+
         private ColorHandler ch;
         private DepthHandler dh;
         private InfraredHandler ih;
@@ -38,7 +38,7 @@ namespace KinectRecorder
         public PreviewWindow()
         {
             InitializeComponent();
-            
+
             ch = ColorHandler.Instance;
             ch.openReader();
 
@@ -47,15 +47,15 @@ namespace KinectRecorder
 
             dh = DepthHandler.Instance;
             dh.startReading();
-            
-        //    ih = InfraredHandler.Instance;
-        //    ih.openReader();
 
-            //sh = SkeletonHandler.Instance;
-            //sh.openReader();
+            ih = InfraredHandler.Instance;
+            ih.startReading();
+
+            sh = SkeletonHandler.Instance;
+            sh.openReader();
 
             depthPreviewBitmap = new WriteableBitmap(dh.Width, dh.Height, 96.0, 96.0, PixelFormats.Gray16, null);
-            //infraredPreviewBitmap = new WriteableBitmap(ih.Width, ih.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+            infraredPreviewBitmap = new WriteableBitmap(ih.Width, ih.Height, 96.0, 96.0, PixelFormats.Gray16, null);
 
             ComponentDispatcher.ThreadIdle += new System.EventHandler(ComponentDispatcher_ThreadIdle);
         }
@@ -65,15 +65,14 @@ namespace KinectRecorder
             this.DialogResult = true;
             ch.closeReader();
             bh.closeReader();
-        //    dh.closeReader();
-        //    ih.closeReader();
+            sh.closeReader();
         }
 
 
         void ComponentDispatcher_ThreadIdle(object sender, EventArgs e)
         {
-            if (count < ch.readerFrameCount) 
-            { 
+            if (count < ch.readerFrameCount)
+            {
                 color_preview.Source = ch.Read();
 
                 bodyIndex_preview.Source = bh.Read();
@@ -81,23 +80,15 @@ namespace KinectRecorder
                 dh.Read(ref depthPreviewBitmap);
                 depth_preview.Source = depthPreviewBitmap;
 
-             //   ih.Read(ref infraredPreviewBitmap);
-             //   infrared_preview.Source = infraredPreviewBitmap;
+                ih.Read(ref infraredPreviewBitmap);
+                infrared_preview.Source = infraredPreviewBitmap;
 
+                sh.Read();
+                skeletal_preview.Source = sh.getPreviewImageSource();
 
 
                 count++;
-            }        
-        }
-
-        public ImageSource ImageSourceSkeletal
-        {
-            get
-            {
-                return this.skeletalImage;
-                //return null;
             }
         }
-
     }
 }

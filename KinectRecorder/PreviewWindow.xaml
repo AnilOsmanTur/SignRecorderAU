@@ -30,9 +30,9 @@
             <Image x:Name="bodyIndex_preview" Stretch="UniformToFill" />
         </Viewbox>
         <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10" Grid.Row="3" Grid.Column="1" >
-            <Image x:Name="skeletal_preview" Source="{Binding ImageSourceSkeletal}" Stretch="UniformToFill" />
+            <Image x:Name="skeletal_preview" Stretch="UniformToFill" />
         </Viewbox>
-        <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="95" Margin="152.2,0,164.8,309.4" TextAlignment="Center" Grid.Column="1" Grid.RowSpan="2"><Run Text="Depth"/></TextBlock>
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontFamily="Segoe UI" FontSize="18" Height="24" Width="95" Margin="140,0,153,0.8" TextAlignment="Center" Grid.Column="1"><Run Text="Depth"/></TextBlock>
         <Viewbox RenderTransformOrigin="0.5,0.5" Margin="10,10.2,9.2,10.4" Grid.Row="1" Grid.Column="2" >
             <Image x:Name="infrared_preview" Stretch="UniformToFill" />
         </Viewbox>
