@@ -245,7 +245,7 @@ namespace KinectRecorder
                 }
             }
         }
-        private Bitmap IRFrameToBitmap(InfraredFrame frame)
+        /*private Bitmap IRFrameToBitmap(InfraredFrame frame)
         {
             System.Drawing.Imaging.PixelFormat format = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
 
@@ -264,7 +264,7 @@ namespace KinectRecorder
             }
 
             return UtilityClass.ByteArrayToBitmap(pixelData, this.Width, this.Height, format);
-        }
+        }*/
         private unsafe void ProcessInfraredFrameData(IntPtr infraredFrameData, uint infraredFrameDataSize)
         {
             // infrared frame data is a 16 bit value

@@ -408,46 +408,6 @@ namespace KinectRecorder
 
         }
 
-        private void ScreenshotButton_Click(object sender, RoutedEventArgs e)
-        {
-            saveCapture();
-        }
-
-        // a image save with bitmap encoder
-        private void saveCapture()
-        {
-            if (this.colorBitmap != null)
-            {
-                // create a png bitmap encoder which knows how to save a .png file
-                BitmapEncoder encoder = new PngBitmapEncoder();
-
-                // create frame from the writable bitmap and add to encoder
-                encoder.Frames.Add(BitmapFrame.Create(this.colorBitmap));
-
-                string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-
-                string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-
-                string path = System.IO.Path.Combine(myPhotos, "KinectScreenshot-Color-" + time + ".png");
-
-                // write the new file to disk
-                try
-                {
-                    // FileStream is IDisposable
-                    using (FileStream fs = new FileStream(path, FileMode.Create))
-                    {
-                        encoder.Save(fs);
-                    }
-
-                    this.StatusTextBlock.Text = string.Format("Screanshot saved at: {0}", path);
-                }
-                catch (IOException)
-                {
-                    this.StatusTextBlock.Text = string.Format("Screanshot chouldn't saved at: {0}", path);
-                }
-            }
-        }
-
         private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
         {
             // ColorFrame is IDisposable
@@ -503,7 +463,13 @@ namespace KinectRecorder
                                                                 depthHandler.Height.ToString());
                 }
             }
+            /*if (depthHandler.frameCount != colorHandler.frameCount)
+            {
 
+                Console.WriteLine("aaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
+                Console.WriteLine("color and depth frame count {0} {1}", colorHandler.frameCount,depthHandler.frameCount);
+
+            }*/
             if (depthFrameProcessed && depthHandler.show)
             {
                 RenderDepthPixels();

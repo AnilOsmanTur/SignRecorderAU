@@ -13,10 +13,10 @@ namespace KinectRecorder
 {
     class UtilityClass
     {
-        internal static Bitmap ByteArrayToBitmap(byte[] array, int width, int height, System.Drawing.Imaging.PixelFormat pixelFormat)
+        internal static void ByteArrayToBitmap(ref Bitmap bitmapFrame, byte[] array, int width, int height)
         {
 
-            Bitmap bitmapFrame = new Bitmap(width, height, pixelFormat);
+            
 
             System.Drawing.Imaging.BitmapData bitmapData = bitmapFrame.LockBits(new Rectangle(0, 0, width, height), System.Drawing.Imaging.ImageLockMode.WriteOnly, bitmapFrame.PixelFormat);
 
@@ -24,7 +24,7 @@ namespace KinectRecorder
             Marshal.Copy(array, 0, intPointer, array.Length);
 
             bitmapFrame.UnlockBits(bitmapData);
-            return bitmapFrame;
+            
 
         }
         internal static BitmapImage BitmapToImageSource(Bitmap bitmap)

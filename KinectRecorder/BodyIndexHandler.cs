@@ -139,10 +139,23 @@ namespace KinectRecorder
                     ProcessBodyIndexFrameData(bodyIndexBuffer.UnderlyingBuffer, bodyIndexBuffer.Size);
                     frameProcessed = true;
                 }
-
+                
                 if (bodyRecording)
                 {
-                    bBitmap = UtilityClass.ByteArrayToBitmap(bodyPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
+                    Bitmap bitmapFrame;
+                    try
+                    {
+                        bitmapFrame = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine("Body Exception");
+                        Console.WriteLine(e);
+                        System.GC.Collect();
+                        bitmapFrame = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
+                    }
+                    UtilityClass.ByteArrayToBitmap(ref bitmapFrame, bodyPixelBuffer, width, height);
+                    bBitmap = bitmapFrame;
                     bodyBitmapBuffer.Enqueue(bBitmap);
                     //System.GC.Collect();
                     frameCount++;
@@ -153,6 +166,8 @@ namespace KinectRecorder
                         frameCount++;
                     }
                 }
+                
+               
             }
 
         }

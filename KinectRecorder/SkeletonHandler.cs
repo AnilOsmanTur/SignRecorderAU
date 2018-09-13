@@ -221,20 +221,27 @@ namespace KinectRecorder
 
         public void Read()
         {
-            using (DrawingContext dc = this.previewDrawingGroup.Open())
+            try
             {
-                dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
+                using (DrawingContext dc = this.previewDrawingGroup.Open())
+                {
+                    dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, this.displayWidth, this.displayHeight));
 
-                depthSkeleton = skeletons[skeletonCounter].getDepthValues();
+                    depthSkeleton = skeletons[skeletonCounter].getDepthValues();
 
-                this.DrawPreviewBody(depthSkeleton, dc);
+                    this.DrawPreviewBody(depthSkeleton, dc);
 
-                //this.DrawPreviewHand(body.HandLeftState, jointPoints[JointType.HandLeft], dc);
-                //this.DrawPreviewHand(body.HandRightState, jointPoints[JointType.HandRight], dc);
+                    //this.DrawPreviewHand(body.HandLeftState, jointPoints[JointType.HandLeft], dc);
+                    //this.DrawPreviewHand(body.HandRightState, jointPoints[JointType.HandRight], dc);
 
 
 
-                skeletonCounter++;
+                    skeletonCounter++;
+                }
+            }
+            catch (Exception e){
+                Console.WriteLine("iskelet datası yok");
+                Console.WriteLine(e);
             }
          
         }

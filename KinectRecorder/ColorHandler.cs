@@ -83,8 +83,10 @@ namespace KinectRecorder
                 //Console.WriteLine("color");
                 if (colorBitmapBuffer.Count > 0)
                 {
+                    //Console.WriteLine("3");
                     //Console.WriteLine(colorBitmapBuffer.Count);
                     this.colorWriter.WriteVideoFrame(colorBitmapBuffer.Dequeue());
+                    //Console.WriteLine("4");
                 }
                 else if (!colorRecording)
                 {
@@ -117,7 +119,6 @@ namespace KinectRecorder
 
         public void ColorFrameArrival(ColorFrame colorFrame, ref WriteableBitmap colorBitmap, double fps)
         {
-
             using (KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
             {
                 colorBitmap.Lock();
@@ -138,10 +139,27 @@ namespace KinectRecorder
 
                     colorFrame.CopyConvertedFrameDataToArray(colorPixelBuffer, ColorImageFormat.Bgra);
 
+
                     if (colorRecording)
                     {
-                        cBitmap = UtilityClass.ByteArrayToBitmap(colorPixelBuffer, width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                        //Console.WriteLine("1");  
+                        Bitmap bitmapFrame;
+                        try
+                        {
+                            bitmapFrame = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                        }
+
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Color Exception");
+                            Console.WriteLine(e);
+                            System.GC.Collect();
+                            bitmapFrame = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                        }
+                        UtilityClass.ByteArrayToBitmap(ref bitmapFrame, colorPixelBuffer, width, height);
+                        cBitmap = bitmapFrame;
                         colorBitmapBuffer.Enqueue(cBitmap);
+                        //Console.WriteLine("2");
                         frameCount++;
                         //garbageCount++;
                         if (fps < 16.0)
@@ -149,20 +167,12 @@ namespace KinectRecorder
                             Console.WriteLine("fps droped");
                             colorBitmapBuffer.Enqueue(cBitmap);
                             frameCount++;
-                            //garbageCount++;
                         }
-                        /*
-                        if (garbageCount > 100)
-                        {
-                            System.GC.Collect();
-                            garbageCount = 0;
-                        }
-                        */
+
                     }
                 }
             }
-                       
-                      
+            //Console.WriteLine("5");
         }
 
 

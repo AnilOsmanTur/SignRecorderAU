@@ -238,6 +238,7 @@ namespace KinectRecorder
                         garbageCount++;
                         this.depthBinaryBuffer.Enqueue((byte[])(depthPixelBuffer.Clone()));
                         this.frameCount++;
+                        
                         if (fps < 16.0)
                         {
                             garbageCount++;
@@ -245,11 +246,11 @@ namespace KinectRecorder
                             this.depthBinaryBuffer.Enqueue((byte[])(depthPixelBuffer.Clone()));
                             this.frameCount++;
                         }
-                        if(garbageCount > 500)
+                        /*if(garbageCount > 500)
                         {
                             System.GC.Collect();
                             garbageCount = 0;
-                        }
+                        }*/
                         
                     }
 
